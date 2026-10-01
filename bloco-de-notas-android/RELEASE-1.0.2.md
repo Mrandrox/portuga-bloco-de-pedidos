@@ -12,3 +12,9 @@ Correção do ícone do aplicativo Android para garantir que o logo Portuga seja
 - Hierarquia visual revisada para destacar ações principais e reduzir ruído.
 - Botões, campos, cartões, modais e espaçamentos receberam acabamento mais limpo e consistente.
 - Mantidas as funcionalidades existentes, incluindo comandas, impressão e Bluetooth.
+
+
+## v1.0.5
+- Corrige a inicialização do bridge Bluetooth nativo no Android para evitar tela branca na abertura do aplicativo.
+
+<!-- [release-apk] -->
