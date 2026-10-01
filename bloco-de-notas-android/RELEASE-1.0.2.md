@@ -17,4 +17,11 @@ Correção do ícone do aplicativo Android para garantir que o logo Portuga seja
 ## v1.0.5
 - Corrige a inicialização do bridge Bluetooth nativo no Android para evitar tela branca na abertura do aplicativo.
 
+
+
+
+## v1.0.6
+- Bridge Bluetooth nativo carregado sob demanda, evitando inicialização prematura do WebView.
+- Mantida a interface e as funções existentes.
+
 <!-- [release-apk] -->
