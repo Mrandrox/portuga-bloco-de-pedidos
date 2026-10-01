@@ -1,9 +1,16 @@
 {
   "appId": "com.blocodenotas.app",
-  "appName": "Bloco de Notas",
+  "appName": "Portuga — Bloco de Pedidos",
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "errorPath": "error.html"
+  },
+  "backgroundColor": "#111111",
+  "android": {
+    "backgroundColor": "#111111",
+    "minWebViewVersion": 55,
+    "initialFocus": true
   }
 }
