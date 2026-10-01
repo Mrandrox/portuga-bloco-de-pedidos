@@ -15,6 +15,17 @@ fi
 mkdir -p "$JAVA_DIR"
 cp "$PLUGIN_SRC" "$JAVA_DIR/BluetoothPrinterPlugin.java"
 
+# Tema/splash leve e compatibilidade WebView.
+RES="$ANDROID/app/src/main/res"
+mkdir -p "$RES/values" "$RES/drawable-nodpi"
+cat > "$RES/values/portuga_colors.xml" <<'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="portuga_splash_bg">#111111</color>
+    <color name="portuga_gold">#D4AF37</color>
+</resources>
+XML
+
 # Ícone oficial do app (logo enviada para o projeto).
 ICON_SRC="$ROOT/native/assets/ic_launcher.png"
 # Se o PNG não estiver no repositório, extrai o logo 512x512 embutido no HTML original.
@@ -33,6 +44,7 @@ out.write_bytes(data)
 PY
 fi
 if [[ -f "$ICON_SRC" ]]; then
+  cp "$ICON_SRC" "$RES/drawable-nodpi/portuga_splash_logo.png"
   for d in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
     mkdir -p "$ANDROID/app/src/main/res/$d"
     cp "$ICON_SRC" "$ANDROID/app/src/main/res/$d/ic_launcher.png"
@@ -47,7 +59,10 @@ fi
 
 cat > "$MAIN" <<'JAVA'
 package com.blocodenotas.app;
+
 import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -55,9 +70,24 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BluetoothPrinterPlugin.class);
         super.onCreate(savedInstanceState);
+        WebView webView = getBridge().getWebView();
+        if (webView != null) {
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(true);
+            settings.setDatabaseEnabled(true);
+            settings.setLoadsImagesAutomatically(true);
+            settings.setAllowFileAccess(true);
+            settings.setAllowContentAccess(true);
+            settings.setBuiltInZoomControls(false);
+            settings.setDisplayZoomControls(false);
+            webView.setBackgroundColor(0xFF111111);
+        }
     }
 }
 JAVA
+
+A
 
 python3 - "$MANIFEST" <<'PY'
 from pathlib import Path
