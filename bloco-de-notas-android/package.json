@@ -1,0 +1,24 @@
+{
+  "name": "bloco-de-notas-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Versão Android do projeto Bloco de Notas.",
+  "scripts": {
+    "android:add": "npx cap add android",
+    "android:prepare": "if [ ! -d android ]; then npx cap add android; fi && ./aplicar-impressora-android.sh && npx cap sync android",
+    "android:sync": "./aplicar-impressora-android.sh && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npx cap run android",
+    "android:build": "./aplicar-impressora-android.sh && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/android": "8.5.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
