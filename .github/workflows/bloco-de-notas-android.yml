@@ -1,0 +1,55 @@
+name: Portuga — Bloco de Pedidos Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bloco-de-notas-android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Create Android project
+        run: npx cap add android
+      - name: Apply Bluetooth printer bridge
+        run: bash ./aplicar-impressora-android.sh
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Build APK
+        run: cd android && ./gradlew assembleDebug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bloco-de-notas-android
+          path: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Publish APK to Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-apk]')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.2
+          target_commitish: ${{ github.sha }}
+          name: Portuga Bloco de Pedidos v1.0.2
+          body: "Versão Android corrigida: novo ícone do Portuga e impressão Bluetooth nativa Classic/SPP para impressoras ESC/POS."
+          files: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
+          generate_release_notes: true
