@@ -112,3 +112,16 @@ elif '<application ' in s:
     s=s.replace('<application ', '<application android:roundIcon="@mipmap/ic_launcher_round" ', 1)
 p.write_text(s)
 PY
+
+# Evita recarregamentos do WebView durante mudanças de densidade/tela.
+python3 - "$MANIFEST" <<'PY'
+from pathlib import Path
+import re, sys
+p=Path(sys.argv[1])
+s=p.read_text()
+s=re.sub(r'android:configChanges="([^"]+)"',
+         lambda m: 'android:configChanges="' + (m.group(1) if 'density' in m.group(1) else m.group(1)+'|density') + '"',
+         s, count=1)
+p.write_text(s)
+PY
+
