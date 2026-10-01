@@ -125,3 +125,30 @@ s=re.sub(r'android:configChanges="([^"]+)"',
 p.write_text(s)
 PY
 
+
+# Personaliza o splash gerado pelo template do Capacitor sem criar dependências.
+STYLES="$ANDROID/app/src/main/res/values/styles.xml"
+if [[ -f "$STYLES" ]]; then
+python3 - "$STYLES" <<'PY'
+from pathlib import Path
+import re, sys
+p=Path(sys.argv[1])
+s=p.read_text()
+def patch(name, body):
+    pattern=r'<style name="' + re.escape(name) + r'"[^>]*>.*?</style>'
+    m=re.search(pattern,s,re.S)
+    if not m:
+        return
+    block=m.group(0)
+    additions=[]
+    if 'windowSplashScreenBackground' not in block:
+        additions.append('        <item name="windowSplashScreenBackground">@color/portuga_splash_bg</item>')
+    if 'windowSplashScreenAnimatedIcon' not in block:
+        additions.append('        <item name="windowSplashScreenAnimatedIcon">@drawable/portuga_splash_logo</item>')
+    if additions:
+        block=block.replace('</style>','\n'+'\n'.join(additions)+'\n    </style>')
+        globals()['s']=s[:m.start()]+block+s[m.end():]
+patch('AppTheme.NoActionBarLaunch',s)
+p.write_text(s)
+PY
+fi
