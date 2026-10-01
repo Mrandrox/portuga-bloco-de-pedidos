@@ -17,3 +17,5 @@ Código Android em `bloco-de-notas-android/`.
 
 ### Release
 O GitHub Actions gera o APK e publica a versão de release quando o commit contém `[release-apk]`.
+
+<!-- [release-apk] -->
