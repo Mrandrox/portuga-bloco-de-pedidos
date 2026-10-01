@@ -110,6 +110,109 @@ Obs: `+PA.observacao.trim():En(Q),valor:R,prazo:i,status:"pendente",criadoEm:Dat
         .theme-portuga .fech-table tbody tr { border-color: rgba(212,175,55,.16) !important; }
         .theme-portuga .stat-gold { border: 1px solid rgba(212,175,55,.45) !important; }
         .theme-portuga ::-webkit-calendar-picker-indicator { filter: invert(80%) sepia(40%) saturate(500%) hue-rotate(-15deg); }
+        /* ============ Refinamento visual — interface limpa / estilo nativo premium ============ */
+        #app-root {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          letter-spacing: -0.01em;
+        }
+        #app-root button {
+          -webkit-tap-highlight-color: transparent;
+          transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease, border-color .16s ease, opacity .16s ease;
+        }
+        #app-root button:active:not(:disabled) { transform: scale(.985); }
+        #app-root button:focus-visible {
+          outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+          outline-offset: 2px;
+        }
+        #app-root input, #app-root select, #app-root textarea {
+          min-height: 44px;
+          border-radius: 12px;
+          transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+        }
+        #app-root input:focus, #app-root select:focus, #app-root textarea:focus {
+          outline: none;
+          border-color: var(--brand);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 16%, transparent);
+        }
+        /* Ações principais: presença visual maior e consistente. */
+        #app-root button.btn-brand,
+        #app-root button.bg-sky-600,
+        #app-root button.bg-green-600 {
+          min-height: 44px;
+          border: 1px solid transparent;
+          border-radius: 12px;
+          font-weight: 700;
+          box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+        }
+        #app-root button.btn-brand:hover:not(:disabled),
+        #app-root button.bg-sky-600:hover:not(:disabled),
+        #app-root button.bg-green-600:hover:not(:disabled) {
+          filter: brightness(1.025);
+          box-shadow: 0 2px 4px rgba(0,0,0,.10), 0 7px 18px rgba(0,0,0,.08);
+        }
+        /* Ações secundárias: menos peso visual para deixar a ação principal evidente. */
+        #app-root button.bg-neutral-100,
+        #app-root button.bg-neutral-200,
+        #app-root button.border {
+          border-radius: 12px;
+          border-color: rgba(0,0,0,.09);
+          box-shadow: 0 1px 2px rgba(0,0,0,.035);
+        }
+        #app-root button.bg-neutral-100:hover:not(:disabled),
+        #app-root button.bg-neutral-200:hover:not(:disabled) {
+          background-color: #f5f5f7;
+        }
+        /* Exclusão/ações destrutivas: claras, mas sem competir com a ação principal. */
+        #app-root button.bg-red-600,
+        #app-root button.border-red-600 {
+          border-radius: 12px;
+          font-weight: 700;
+        }
+        /* Cartões e seções: hierarquia por superfície, borda e profundidade. */
+        #app-root .bg-white.rounded-2xl,
+        #app-root section.rounded-2xl {
+          border-color: rgba(0,0,0,.07);
+          box-shadow: 0 1px 2px rgba(0,0,0,.025), 0 8px 24px rgba(0,0,0,.045);
+        }
+        #app-root .bg-white.rounded-xl {
+          border-color: rgba(0,0,0,.065);
+          box-shadow: 0 1px 2px rgba(0,0,0,.025), 0 5px 16px rgba(0,0,0,.035);
+        }
+        /* Cabeçalho: compacto, estável e visualmente separado do conteúdo. */
+        #app-root header {
+          box-shadow: 0 1px 0 rgba(0,0,0,.08), 0 4px 18px rgba(0,0,0,.06);
+        }
+        #app-root header .header-logo {
+          border-radius: 12px;
+          box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+        /* Pílulas de status: informação, não ação. */
+        #app-root span.rounded-full {
+          letter-spacing: .01em;
+        }
+        /* Modais: aparência de folha nativa, com separação clara das ações. */
+        #app-root [role="dialog"] > div {
+          box-shadow: 0 20px 60px rgba(0,0,0,.18);
+        }
+        @media (max-width: 639px) {
+          #app-root .max-w-2xl { max-width: 100%; }
+          #app-root button { min-height: 44px; }
+          #app-root main { padding-left: 14px; padding-right: 14px; }
+        }
+        .theme-portuga #app-root button,
+        .theme-portuga button {
+          -webkit-tap-highlight-color: transparent;
+        }
+        .theme-portuga button.btn-brand {
+          box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 7px 18px rgba(0,0,0,.22);
+        }
+        .theme-portuga button.bg-neutral-100,
+        .theme-portuga button.bg-neutral-200,
+        .theme-portuga button.border {
+          border-color: rgba(212,175,55,.22);
+          box-shadow: 0 1px 2px rgba(0,0,0,.18);
+        }
         /* O recibo é sempre papel branco com tinta preta, independente do tema do app */
         .receipt-paper { background: #fff !important; color: #000 !important; border-color: #000 !important; }
         .receipt-paper * { background: transparent !important; color: #000 !important; border-color: #000 !important; box-shadow: none !important; text-shadow: none !important; }
