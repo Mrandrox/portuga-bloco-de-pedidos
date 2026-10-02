@@ -1,24 +1,17 @@
 (function () {
   "use strict";
 
-  var CLIENTS_KEY = "portuga.clientes.tabs.v2";
+  var CLIENTS_KEY = "portuga.clientes.tabs.v3";
   var ORDERS_KEY = "blocoPedidos.pedidos";
-  var CATEGORIES = [
-    ["lanches", "Lanches", "🍔"],
-    ["porcoes", "Petiscos", "🍟"],
-    ["pizzas", "Pizzas", "🍕"],
-    ["bebidas", "Bebidas", "🥤"]
-  ];
   var activeClientId = null;
-  var activeClientName = "";
   var lastSignature = "";
 
-  function normalizeName(value) {
+  function normalize(value) {
     return String(value || "").trim().replace(/\s+/g, " ");
   }
 
   function keyName(value) {
-    return normalizeName(value).toLocaleLowerCase("pt-BR");
+    return normalize(value).toLocaleLowerCase("pt-BR");
   }
 
   function money(value) {
@@ -28,13 +21,18 @@
     });
   }
 
-  function readClients() {
+  function readJson(key, fallback) {
     try {
-      var list = JSON.parse(localStorage.getItem(CLIENTS_KEY) || "[]");
-      return Array.isArray(list) ? list : [];
+      var value = JSON.parse(localStorage.getItem(key) || "");
+      return value == null ? fallback : value;
     } catch (_) {
-      return [];
+      return fallback;
     }
+  }
+
+  function readClients() {
+    var list = readJson(CLIENTS_KEY, []);
+    return Array.isArray(list) ? list : [];
   }
 
   function saveClients(list) {
@@ -42,12 +40,8 @@
   }
 
   function readOrders() {
-    try {
-      var list = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-      return Array.isArray(list) ? list : [];
-    } catch (_) {
-      return [];
-    }
+    var list = readJson(ORDERS_KEY, []);
+    return Array.isArray(list) ? list : [];
   }
 
   function getClientOrders(client) {
@@ -57,7 +51,7 @@
         return keyName(order && order.cliente) === wanted;
       })
       .sort(function (a, b) {
-        return Number(a.criadoEm || 0) - Number(b.criadoEm || 0);
+        return Number(b.criadoEm || 0) - Number(a.criadoEm || 0);
       });
   }
 
@@ -67,8 +61,19 @@
     }, 0);
   }
 
+  function getEditableOrder(client) {
+    var orders = getClientOrders(client);
+    if (!orders.length) return null;
+
+    var open = orders.find(function (order) {
+      return order && order.status !== "entregue";
+    });
+
+    return open || orders[0];
+  }
+
   function upsertClient(name, phone, address) {
-    name = normalizeName(name);
+    name = normalize(name);
     if (!name) return null;
 
     var clients = readClients();
@@ -80,287 +85,166 @@
       found = {
         id: "cli_" + Date.now().toString(36),
         name: name,
-        phone: normalizeName(phone),
-        address: normalizeName(address),
+        phone: normalize(phone),
+        address: normalize(address),
         createdAt: Date.now()
       };
       clients.unshift(found);
     } else {
       found.name = name;
-      if (phone) found.phone = normalizeName(phone);
-      if (address) found.address = normalizeName(address);
+      if (phone) found.phone = normalize(phone);
+      if (address) found.address = normalize(address);
       found.updatedAt = Date.now();
     }
 
     saveClients(clients);
     activeClientId = found.id;
-    activeClientName = found.name;
     return found;
   }
 
-  function findButton(label) {
+  function getOrdersButton() {
     var buttons = document.querySelectorAll("button");
     for (var i = 0; i < buttons.length; i++) {
-      if (normalizeName(buttons[i].textContent) === label) return buttons[i];
+      if (normalize(buttons[i].textContent) === "Pedidos") return buttons[i];
     }
     return null;
   }
 
-  function findOrderInput(placeholder) {
-    return document.querySelector('input[placeholder="' + placeholder + '"]');
+  function isOrdersView() {
+    var button = getOrdersButton();
+    return !!button && button.getAttribute("aria-pressed") === "true";
   }
 
-  function setReactInput(input, value) {
-    if (!input) return;
-    var descriptor = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value"
-    );
-    if (descriptor && descriptor.set) descriptor.set.call(input, value);
-    else input.value = value;
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  function openOrderForm() {
-    var input = findOrderInput("Ex.: Maria Silva");
-    if (input) return input;
-    var newOrder = findButton("Novo pedido");
-    if (newOrder) {
-      newOrder.click();
-      return null;
+  function callOrderApi(method, arg1, arg2, arg3) {
+    var api = window.PortugaOrders;
+    if (api && typeof api[method] === "function") {
+      api[method](arg1, arg2, arg3);
+      return true;
     }
-    return null;
+    setTimeout(function () {
+      var retry = window.PortugaOrders;
+      if (retry && typeof retry[method] === "function") {
+        retry[method](arg1, arg2, arg3);
+      }
+    }, 180);
+    return false;
   }
 
-  function activateClient(client) {
+  function openClient(client) {
     activeClientId = client.id;
-    activeClientName = client.name;
-    var input = openOrderForm();
+    var order = getEditableOrder(client);
 
-    if (!input) {
-      setTimeout(function () { activateClient(client); }, 140);
-      return;
+    if (order) {
+      callOrderApi("edit", order.id);
+    } else {
+      callOrderApi("newForClient", client.name, client.phone || "", client.address || "");
     }
-
-    setReactInput(input, client.name);
-
-    var phone = findOrderInput("Ex.: 11987654321");
-    if (phone && client.phone) setReactInput(phone, client.phone);
-
-    var address = findOrderInput("Endereço de entrega (opcional)");
-    if (address && client.address) setReactInput(address, client.address);
 
     renderAll();
-    input.focus();
   }
 
   function addClient() {
-    var name = prompt("Nome do cliente:");
-    name = normalizeName(name);
+    var name = normalize(prompt("Nome do cliente:"));
     if (!name) return;
 
-    var phone = prompt("WhatsApp do cliente (opcional):", "");
-    var address = prompt("Endereço (opcional):", "");
+    var phone = normalize(prompt("WhatsApp do cliente (opcional):", ""));
+    var address = normalize(prompt("Endereço (opcional):", ""));
     var client = upsertClient(name, phone, address);
 
-    if (client) activateClient(client);
+    if (client) openClient(client);
   }
 
   function removeClient(client) {
     if (!client) return;
+
     if (!confirm(
       "Remover a aba de " + client.name +
-      "?\nOs pedidos já registrados continuam no histórico."
+      "?\nOs pedidos já registrados continuam salvos no aparelho."
     )) return;
 
     saveClients(readClients().filter(function (item) {
       return item.id !== client.id;
     }));
 
-    if (activeClientId === client.id) {
-      activeClientId = null;
-      activeClientName = "";
-    }
+    if (activeClientId === client.id) activeClientId = null;
 
     renderAll();
   }
 
-  function renderClientTabs() {
-    var bar = document.getElementById("portuga-client-tabs");
-    if (!bar) return;
-
-    var clients = readClients();
-    var ordersButton = findButton("Pedidos");
-    var isOrdersView =
-      ordersButton &&
-      ordersButton.getAttribute("aria-pressed") === "true";
-
-    bar.style.display = isOrdersView ? "block" : "none";
-    if (!isOrdersView) return;
-
-    var signature = JSON.stringify({
-      clients: clients,
-      active: activeClientId,
-      orders: readOrders().map(function (o) {
-        return [o.id, o.cliente, o.valor, o.criadoEm, o.status];
-      })
-    });
-
-    if (signature === lastSignature) return;
-    lastSignature = signature;
-
-    bar.innerHTML = "";
-
-    var header = document.createElement("div");
-    header.className = "pct-header";
-
-    var titleWrap = document.createElement("div");
-    titleWrap.className = "pct-title-wrap";
-
-    var title = document.createElement("strong");
-    title.textContent = "Clientes / Comandas";
-
-    var subtitle = document.createElement("small");
-    subtitle.textContent =
-      "Uma aba por cliente • vários pedidos na mesma comanda • subtotal individual";
-
-    titleWrap.appendChild(title);
-    titleWrap.appendChild(subtitle);
-
-    var add = document.createElement("button");
-    add.type = "button";
-    add.className = "pct-add";
-    add.textContent = "+ Cliente";
-    add.onclick = addClient;
-
-    header.appendChild(titleWrap);
-    header.appendChild(add);
-    bar.appendChild(header);
-
-    var strip = document.createElement("div");
-    strip.className = "pct-strip";
-
-    clients.forEach(function (client) {
-      var orders = getClientOrders(client);
-      var total = orders.reduce(function (sum, order) {
-        return sum + Number(order && order.valor || 0);
-      }, 0);
-
-      var wrap = document.createElement("div");
-      wrap.className = "pct-tab-wrap";
-
-      var tab = document.createElement("button");
-      tab.type = "button";
-      tab.className =
-        "pct-tab" + (activeClientId === client.id ? " active" : "");
-
-      var name = document.createElement("span");
-      name.className = "pct-name";
-      name.textContent = client.name;
-
-      var count = document.createElement("span");
-      count.className = "pct-count";
-      count.textContent =
-        orders.length + (orders.length === 1 ? " pedido" : " pedidos");
-
-      var totalEl = document.createElement("span");
-      totalEl.className = "pct-total";
-      totalEl.textContent = money(total);
-
-      tab.appendChild(name);
-      tab.appendChild(count);
-      tab.appendChild(totalEl);
-      tab.onclick = function () { activateClient(client); };
-
-      var close = document.createElement("button");
-      close.type = "button";
-      close.className = "pct-close";
-      close.textContent = "×";
-      close.title = "Remover aba";
-      close.onclick = function (event) {
-        event.stopPropagation();
-        removeClient(client);
-      };
-
-      wrap.appendChild(tab);
-      wrap.appendChild(close);
-      strip.appendChild(wrap);
-    });
-
-    bar.appendChild(strip);
-    renderClientSummary(clients);
-  }
-
-  function renderClientSummary(clients) {
-    var old = document.getElementById("portuga-client-summary");
+  function renderSummary(bar, client) {
+    var old = bar.querySelector(".pct-summary");
     if (old) old.remove();
-
-    if (!activeClientId) return;
-
-    var client = clients.find(function (item) {
-      return item.id === activeClientId;
-    });
-
     if (!client) return;
 
     var orders = getClientOrders(client);
-    var total = orders.reduce(function (sum, order) {
-      return sum + Number(order && order.valor || 0);
-    }, 0);
+    var total = getClientTotal(client);
 
     var card = document.createElement("section");
-    card.id = "portuga-client-summary";
     card.className = "pct-summary";
 
-    var heading = document.createElement("div");
-    heading.className = "pct-summary-heading";
+    var top = document.createElement("div");
+    top.className = "pct-summary-heading";
 
-    var left = document.createElement("div");
-    var title = document.createElement("strong");
-    title.textContent = "Comanda de " + client.name;
+    var title = document.createElement("div");
+    title.className = "pct-summary-title";
+
+    var strong = document.createElement("strong");
+    strong.textContent = "Comanda de " + client.name;
 
     var hint = document.createElement("small");
-    hint.textContent =
-      "Subtotal individual desta comanda. O faturamento geral continua sendo calculado pela lista de pedidos.";
+    hint.textContent = orders.length
+      ? "Adicione itens sem criar outra comanda para este cliente."
+      : "Esta aba ficará vinculada ao cliente para os próximos pedidos.";
 
-    left.appendChild(title);
-    left.appendChild(hint);
+    title.appendChild(strong);
+    title.appendChild(hint);
 
-    var totalEl = document.createElement("div");
-    totalEl.className = "pct-summary-total";
-    totalEl.textContent = money(total);
+    var amount = document.createElement("div");
+    amount.className = "pct-summary-total";
+    amount.textContent = money(total);
 
-    heading.appendChild(left);
-    heading.appendChild(totalEl);
-    card.appendChild(heading);
+    top.appendChild(title);
+    top.appendChild(amount);
+    card.appendChild(top);
 
     var actions = document.createElement("div");
     actions.className = "pct-summary-actions";
 
-    var newOrder = document.createElement("button");
-    newOrder.type = "button";
-    newOrder.textContent = "＋ Novo pedido para " + client.name;
-    newOrder.onclick = function () { activateClient(client); };
+    var addItems = document.createElement("button");
+    addItems.type = "button";
+    addItems.className = "pct-primary-action";
+    addItems.textContent = orders.length ? "＋ Adicionar itens à comanda" : "＋ Criar primeiro pedido";
+    addItems.onclick = function () {
+      activeClientId = client.id;
+      var current = getEditableOrder(client);
+      if (current) {
+        callOrderApi("edit", current.id);
+      } else {
+        callOrderApi("newForClient", client.name, client.phone || "", client.address || "");
+      }
+      renderAll();
+    };
 
     var details = document.createElement("button");
     details.type = "button";
-    details.textContent = "Ver pedidos desta comanda";
-    details.onclick = function () { showClientDetails(client); };
+    details.className = "pct-secondary-action";
+    details.textContent = "Ver pedidos da comanda";
+    details.onclick = function () {
+      showClientDetails(client);
+    };
 
-    actions.appendChild(newOrder);
+    actions.appendChild(addItems);
     actions.appendChild(details);
     card.appendChild(actions);
 
-    var root = document.getElementById("root");
-    if (root && root.parentNode) root.parentNode.insertBefore(card, root);
+    bar.appendChild(card);
   }
 
   function showClientDetails(client) {
     var orders = getClientOrders(client);
 
-    var modal = document.createElement("div");
-    modal.className = "pct-modal-backdrop";
+    var backdrop = document.createElement("div");
+    backdrop.className = "pct-modal-backdrop";
 
     var box = document.createElement("div");
     box.className = "pct-modal";
@@ -369,7 +253,8 @@
     close.type = "button";
     close.className = "pct-modal-close";
     close.textContent = "×";
-    close.onclick = function () { modal.remove(); };
+    close.setAttribute("aria-label", "Fechar");
+    close.onclick = function () { backdrop.remove(); };
 
     var title = document.createElement("h2");
     title.textContent = "Comanda de " + client.name;
@@ -391,8 +276,7 @@
     if (!orders.length) {
       var empty = document.createElement("p");
       empty.className = "pct-empty";
-      empty.textContent =
-        "Ainda não existem pedidos registrados para este cliente.";
+      empty.textContent = "Nenhum pedido registrado nesta comanda.";
       list.appendChild(empty);
     } else {
       orders.forEach(function (order, index) {
@@ -412,8 +296,25 @@
         left.appendChild(code);
         left.appendChild(when);
 
-        var right = document.createElement("strong");
-        right.textContent = money(order.valor);
+        var right = document.createElement("div");
+        right.className = "pct-row-right";
+
+        var value = document.createElement("strong");
+        value.textContent = money(order.valor);
+
+        var edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "pct-mini-edit";
+        edit.textContent = "Adicionar itens";
+        edit.onclick = function () {
+          activeClientId = client.id;
+          callOrderApi("edit", order.id);
+          backdrop.remove();
+          renderAll();
+        };
+
+        right.appendChild(value);
+        right.appendChild(edit);
 
         row.appendChild(left);
         row.appendChild(right);
@@ -422,110 +323,132 @@
     }
 
     box.appendChild(list);
-    modal.appendChild(box);
-    document.body.appendChild(modal);
+    backdrop.appendChild(box);
+    document.body.appendChild(backdrop);
   }
 
-  function injectClientFromCurrentForm() {
-    var nameInput = findOrderInput("Ex.: Maria Silva");
-    if (!nameInput) return;
+  function renderAll() {
+    injectStyle();
+    installShell();
 
-    var name = normalizeName(nameInput.value);
-    if (!name) return;
+    var bar = document.getElementById("portuga-client-tabs");
+    if (!bar) return;
 
-    var phone = findOrderInput("Ex.: 11987654321");
-    var address = findOrderInput("Endereço de entrega (opcional)");
+    var visible = isOrdersView();
+    bar.style.display = visible ? "block" : "none";
+    if (!visible) return;
 
-    var client = upsertClient(
-      name,
-      phone && phone.value,
-      address && address.value
-    );
+    var clients = readClients();
+    var signature = JSON.stringify({
+      clients: clients,
+      active: activeClientId,
+      orders: readOrders().map(function (order) {
+        return [
+          order.id,
+          order.cliente,
+          order.valor,
+          order.criadoEm,
+          order.status,
+          order.atualizadoEm
+        ];
+      })
+    });
 
-    if (client) {
-      activeClientId = client.id;
-      activeClientName = client.name;
-    }
-  }
+    if (signature === lastSignature) return;
+    lastSignature = signature;
 
-  function watchNewOrderButton() {
-    var buttons = document.querySelectorAll("button");
+    bar.innerHTML = "";
 
-    for (var i = 0; i < buttons.length; i++) {
-      var button = buttons[i];
-      if (button.dataset.portugaClientHook === "1") continue;
+    var header = document.createElement("div");
+    header.className = "pct-header";
 
-      if (normalizeName(button.textContent) === "Adicionar pedido") {
-        button.dataset.portugaClientHook = "1";
-        button.addEventListener("click", function () {
-          injectClientFromCurrentForm();
-          setTimeout(renderAll, 220);
-        }, true);
-      }
-    }
-  }
+    var heading = document.createElement("div");
+    heading.className = "pct-title-wrap";
 
-  function installCategoryTabs() {
-    var selects = document.querySelectorAll("select");
+    var title = document.createElement("strong");
+    title.textContent = "Clientes / Comandas";
 
-    for (var i = 0; i < selects.length; i++) {
-      var select = selects[i];
-      if (select.dataset.portugaCategoryTabs === "1") continue;
+    var subtitle = document.createElement("small");
+    subtitle.textContent =
+      "Uma aba por cliente • vários itens na mesma comanda • subtotal individual";
 
-      var groups = select.querySelectorAll("optgroup");
-      if (groups.length < 3) continue;
+    heading.appendChild(title);
+    heading.appendChild(subtitle);
 
-      select.dataset.portugaCategoryTabs = "1";
+    var add = document.createElement("button");
+    add.type = "button";
+    add.className = "pct-add";
+    add.textContent = "+ Cliente";
+    add.onclick = addClient;
 
-      for (var g = 0; g < groups.length; g++) {
-        if (groups[g].label === "Porções") groups[g].label = "Petiscos";
-      }
+    header.appendChild(heading);
+    header.appendChild(add);
+    bar.appendChild(header);
 
-      var tabs = document.createElement("div");
-      tabs.className = "pct-categories";
+    var strip = document.createElement("div");
+    strip.className = "pct-strip";
 
-      CATEGORIES.forEach(function (category, index) {
-        var button = document.createElement("button");
-        button.type = "button";
-        button.textContent = category[2] + " " + category[1];
+    clients.forEach(function (client) {
+      var orders = getClientOrders(client);
+      var total = getClientTotal(client);
 
-        button.onclick = function () {
-          for (var j = 0; j < groups.length; j++) {
-            var label =
-              (groups[j].getAttribute("label") || "").toLowerCase();
-            var wanted = category[1].toLowerCase();
+      var wrap = document.createElement("div");
+      wrap.className = "pct-tab-wrap";
 
-            groups[j].style.display =
-              label === wanted ||
-              (category[0] === "porcoes" && label === "porções")
-                ? ""
-                : "none";
-          }
+      var tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "pct-tab" + (activeClientId === client.id ? " active" : "");
 
-          var all = tabs.querySelectorAll("button");
-          for (var k = 0; k < all.length; k++) {
-            all[k].classList.toggle("active", all[k] === button);
-          }
+      var name = document.createElement("span");
+      name.className = "pct-name";
+      name.textContent = client.name;
 
-          select.value = "";
-          select.dispatchEvent(new Event("change", { bubbles: true }));
-        };
+      var count = document.createElement("span");
+      count.className = "pct-count";
+      count.textContent =
+        orders.length + (orders.length === 1 ? " pedido" : " pedidos");
 
-        tabs.appendChild(button);
-        if (index === 0) setTimeout(function () { button.click(); }, 0);
-      });
+      var totalEl = document.createElement("span");
+      totalEl.className = "pct-total";
+      totalEl.textContent = money(total);
 
-      if (select.parentNode) select.parentNode.insertBefore(tabs, select);
-    }
+      tab.appendChild(name);
+      tab.appendChild(count);
+      tab.appendChild(totalEl);
+      tab.onclick = function () { openClient(client); };
+
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "pct-close";
+      close.textContent = "×";
+      close.title = "Remover aba";
+      close.setAttribute("aria-label", "Remover aba de " + client.name);
+      close.onclick = function (event) {
+        event.stopPropagation();
+        removeClient(client);
+      };
+
+      wrap.appendChild(tab);
+      wrap.appendChild(close);
+      strip.appendChild(wrap);
+    });
+
+    bar.appendChild(strip);
+
+    var activeClient = clients.find(function (client) {
+      return client.id === activeClientId;
+    });
+
+    renderSummary(bar, activeClient || null);
   }
 
   function installShell() {
-    if (!document.getElementById("portuga-client-tabs")) {
-      var bar = document.createElement("section");
-      bar.id = "portuga-client-tabs";
-      bar.style.display = "none";
-      document.body.insertBefore(bar, document.body.firstChild);
-    }
+    if (document.getElementById("portuga-client-tabs")) return;
+
+    var bar = document.createElement("section");
+    bar.id = "portuga-client-tabs";
+    bar.setAttribute("aria-label", "Clientes e comandas");
+    document.body.insertBefore(bar, document.body.firstChild);
   }
 
   function injectStyle() {
@@ -534,63 +457,70 @@
     var style = document.createElement("style");
     style.id = "portuga-client-style";
     style.textContent = [
-      "#portuga-client-tabs{position:sticky;top:0;z-index:28;background:linear-gradient(180deg,#17120a,#21170b);color:#fff;padding:10px 12px;border-bottom:1px solid rgba(212,175,55,.4);box-shadow:0 4px 18px rgba(0,0,0,.16)}",
-      ".pct-header{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:960px;margin:0 auto}",
-      ".pct-title-wrap strong{display:block;color:#f5c542;font-size:14px;font-weight:900}",
-      ".pct-title-wrap small{display:block;color:#d7d0c4;font-size:11px;margin-top:2px;line-height:1.35}",
-      ".pct-add{border:1px solid #d4af37;background:#d4af37;color:#17120a;border-radius:12px;padding:9px 12px;font-weight:900;white-space:nowrap}",
-      ".pct-strip{display:flex;gap:7px;overflow-x:auto;padding:8px 0 2px;max-width:960px;margin:0 auto}",
-      ".pct-tab-wrap{display:flex;flex:none}",
-      ".pct-tab{min-width:132px;border:1px solid #d4af37;border-right:0;border-radius:12px 0 0 12px;background:#fff;color:#262626;padding:9px 10px;text-align:left}",
-      ".pct-tab.active{background:#d4af37;color:#17120a}",
+      "#portuga-client-tabs{position:relative;z-index:20;box-sizing:border-box;width:100%;background:linear-gradient(180deg,#17120a 0%,#21170b 100%);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;border-bottom:1px solid rgba(212,175,55,.42);box-shadow:0 5px 18px rgba(0,0,0,.18)}",
+      ".pct-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;max-width:960px;margin:0 auto}",
+      ".pct-title-wrap{min-width:0;padding-top:1px}",
+      ".pct-title-wrap strong{display:block;color:#f5c542;font-size:18px;line-height:1.2;font-weight:900}",
+      ".pct-title-wrap small{display:block;color:#d7d0c4;font-size:12px;line-height:1.35;margin-top:3px}",
+      ".pct-add{flex:0 0 auto;border:1px solid #e5bd35;background:#e5bd35;color:#17120a;border-radius:14px;padding:10px 14px;font-weight:900;font-size:14px;min-height:44px}",
+      ".pct-strip{display:flex;align-items:stretch;gap:8px;overflow-x:auto;overflow-y:hidden;padding:10px 0 3px;width:100%;max-width:960px;margin:0 auto;-webkit-overflow-scrolling:touch}",
+      ".pct-strip::-webkit-scrollbar{display:none}",
+      ".pct-tab-wrap{display:flex;flex:none;min-width:158px}",
+      ".pct-tab{flex:1;min-width:0;border:1px solid #d4af37;border-right:0;border-radius:14px 0 0 14px;background:#fff;color:#242424;padding:9px 11px;text-align:left;box-shadow:none}",
+      ".pct-tab.active{background:#e5bd35;color:#17120a}",
       ".pct-name,.pct-count,.pct-total{display:block}",
-      ".pct-name{font-size:12px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}",
-      ".pct-count{font-size:10px;opacity:.72;margin-top:2px}",
-      ".pct-total{font-size:13px;font-weight:900;margin-top:3px}",
-      ".pct-close{border:1px solid #d4af37;border-radius:0 12px 12px 0;background:#fff;color:#777;padding:0 8px;font-size:18px}",
-      ".pct-tab.active+.pct-close{background:#d4af37;color:#17120a}",
-      ".pct-summary{margin:10px auto 14px;max-width:960px;background:linear-gradient(135deg,#241a08,#120d07);color:#fff;border:1px solid rgba(212,175,55,.55);border-radius:18px;padding:14px;box-shadow:0 5px 20px rgba(0,0,0,.1)}",
-      ".pct-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:15px}",
-      ".pct-summary-heading strong{display:block;font-size:16px;color:#f5c542}",
-      ".pct-summary-heading small{display:block;margin-top:4px;color:#d7d0c4;font-size:11px;line-height:1.35;max-width:640px}",
-      ".pct-summary-total{font-size:22px;font-weight:900;white-space:nowrap;color:#fff}",
-      ".pct-summary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}",
-      ".pct-summary-actions button{border:1px solid #d4af37;background:#d4af37;color:#17120a;border-radius:11px;padding:10px;font-weight:900}",
-      ".pct-summary-actions button+button{background:rgba(255,255,255,.08);color:#fff}",
-      ".pct-categories{display:flex;gap:6px;overflow-x:auto;padding:6px 0 8px}",
-      ".pct-categories button{flex:none;border:1px solid #e5e5e5;background:#f5f5f5;color:#525252;border-radius:10px;padding:8px 11px;font-weight:900;font-size:12px}",
-      ".pct-categories button.active{background:#d4af37;border-color:#d4af37;color:#17120a}",
-      ".pct-modal-backdrop{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.58);display:flex;align-items:flex-end;justify-content:center;padding:0}",
-      ".pct-modal{position:relative;width:100%;max-width:520px;max-height:88vh;overflow:auto;background:#fff;border-radius:20px 20px 0 0;padding:20px}",
-      ".pct-modal h2{margin:0;color:#17120a;font-size:21px;font-weight:900;padding-right:30px}",
+      ".pct-name{font-size:14px;font-weight:900;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      ".pct-count{font-size:11px;opacity:.72;margin-top:3px}",
+      ".pct-total{font-size:15px;font-weight:900;margin-top:3px;line-height:1.2}",
+      ".pct-close{width:42px;border:1px solid #d4af37;border-radius:0 14px 14px 0;background:#fff;color:#666;font-size:21px;padding:0}",
+      ".pct-tab.active+.pct-close{background:#e5bd35;color:#17120a}",
+      ".pct-summary{width:100%;max-width:960px;margin:7px auto 2px;background:linear-gradient(135deg,#2a1d08,#120d07);border:1px solid rgba(212,175,55,.62);border-radius:16px;padding:12px;box-sizing:border-box}",
+      ".pct-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}",
+      ".pct-summary-title{min-width:0}",
+      ".pct-summary-title strong{display:block;color:#f5c542;font-size:16px;font-weight:900;line-height:1.2}",
+      ".pct-summary-title small{display:block;color:#d7d0c4;font-size:11px;line-height:1.35;margin-top:4px}",
+      ".pct-summary-total{font-size:19px;font-weight:900;color:#fff;white-space:nowrap}",
+      ".pct-summary-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}",
+      ".pct-summary-actions button{min-height:42px;border-radius:11px;padding:9px 10px;font-weight:900;font-size:12px}",
+      ".pct-primary-action{border:1px solid #e5bd35;background:#e5bd35;color:#17120a}",
+      ".pct-secondary-action{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff}",
+      ".pct-modal-backdrop{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;padding:0}",
+      ".pct-modal{position:relative;width:100%;max-width:560px;max-height:88vh;overflow:auto;background:#fff;color:#222;border-radius:20px 20px 0 0;padding:20px;box-sizing:border-box;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}",
+      ".pct-modal h2{margin:0;padding-right:38px;color:#17120a;font-size:21px;font-weight:900}",
       ".pct-modal>p{margin:6px 0 14px;color:#666;font-size:13px}",
-      ".pct-modal-close{position:absolute;right:12px;top:12px;border:0;background:#f3f3f3;border-radius:50%;width:34px;height:34px;font-size:22px;color:#555}",
+      ".pct-modal-close{position:absolute;right:12px;top:12px;width:36px;height:36px;border:0;border-radius:50%;background:#f1f1f1;color:#555;font-size:23px}",
       ".pct-order-list{border-top:1px solid #e5e5e5}",
       ".pct-order-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eee}",
       ".pct-order-row strong{display:block;color:#222;font-size:14px}",
       ".pct-order-row small{display:block;margin-top:3px;color:#777;font-size:11px}",
+      ".pct-row-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}",
+      ".pct-mini-edit{border:1px solid #d4af37;border-radius:9px;background:#fff8d9;color:#6b5200;padding:7px 9px;font-size:11px;font-weight:900}",
       ".pct-empty{color:#777;font-size:13px;padding:12px 0}",
-      "@media (max-width:640px){.pct-summary-actions{grid-template-columns:1fr}.pct-summary-total{font-size:19px}.pct-header{align-items:flex-start}}"
+      "@media (max-width:640px){.pct-title-wrap strong{font-size:17px}.pct-title-wrap small{font-size:11px;max-width:235px}.pct-add{padding:10px 12px}.pct-summary-actions{grid-template-columns:1fr}.pct-summary-total{font-size:18px}.pct-tab-wrap{min-width:150px}}"
     ].join("");
     document.head.appendChild(style);
   }
 
-  function renderAll() {
-    injectStyle();
-    installShell();
-    installCategoryTabs();
-    watchNewOrderButton();
-    renderClientTabs();
-  }
-
   function start() {
     renderAll();
+
+    var scheduled = false;
     var observer = new MutationObserver(function () {
-      window.requestAnimationFrame(renderAll);
+      if (scheduled) return;
+      scheduled = true;
+      window.requestAnimationFrame(function () {
+        scheduled = false;
+        renderAll();
+      });
     });
+
     observer.observe(document.body, { childList: true, subtree: true });
-    window.setInterval(renderAll, 1400);
+    window.setInterval(renderAll, 1200);
     window.addEventListener("storage", renderAll);
+
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) renderAll();
+    });
   }
 
   if (document.readyState === "loading") {
@@ -603,7 +533,12 @@
     addClient: addClient,
     refresh: renderAll,
     getActiveClient: function () {
-      return { id: activeClientId, name: activeClientName };
+      return {
+        id: activeClientId,
+        name: (readClients().find(function (client) {
+          return client.id === activeClientId;
+        }) || {}).name || ""
+      };
     }
   };
 })();
