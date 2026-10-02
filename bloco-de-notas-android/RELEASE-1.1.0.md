@@ -17,3 +17,4 @@
 ## Observação
 
 O build do APK acontece pelo GitHub Actions porque o projeto Android é gerado pelo Capacitor no ambiente de build.
+- Build Android configurado para JDK 21 conforme o projeto Capacitor gerado.
