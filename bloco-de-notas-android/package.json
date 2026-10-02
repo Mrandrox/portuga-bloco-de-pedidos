@@ -10,7 +10,7 @@
     "android:open": "npx cap open android",
     "android:run": "npx cap run android",
     "android:build": "./aplicar-impressora-android.sh && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "postinstall": "node -e \"const fs=require('fs');const p='aplicar-impressora-android.sh';let s=fs.readFileSync(p,'utf8');s=s.replace(/\\\\nA\\\\n\\\\npython3 - \\\\\\\"\\\\$MANIFEST\\\\\\\"/g,'\\\\n\\\\npython3 - \\\\\\\"\\\\$MANIFEST\\\\\\\"');fs.writeFileSync(p,s);\""
+    "postinstall": "node -e \"const fs=require('fs');const p='aplicar-impressora-android.sh';let s=fs.readFileSync(p,'utf8');s=s.replace(/\\\\nA\\\\n\\\\npython3 - /g,'\\\\n\\\\npython3 - ');fs.writeFileSync(p,s);\""
   },
   "dependencies": {
     "@capacitor/core": "8.5.2"
