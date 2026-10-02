@@ -6,7 +6,7 @@
   "server": {
     "androidScheme": "https",
     "hostname": "localhost",
-    "appStartPath": "index.html"
+    "appStartPath": "/index.html"
   },
   "android": {
     "minWebViewVersion": 55,
