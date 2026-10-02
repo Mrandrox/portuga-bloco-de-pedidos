@@ -4,8 +4,8 @@
   "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "http",
-    "hostname": "127.0.0.1",
+    "androidScheme": "https",
+    "hostname": "localhost",
     "appStartPath": "index.html"
   },
   "android": {
@@ -13,7 +13,8 @@
     "minHuaweiWebViewVersion": 10,
     "initialFocus": false,
     "resolveServiceWorkerRequests": true,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": true,
+    "useLegacyBridge": false
   },
   "plugins": {
     "SystemBars": {
