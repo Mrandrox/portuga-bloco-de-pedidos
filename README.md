@@ -1,37 +1,57 @@
 # Portuga — Bloco de Pedidos
 
-## 📱 Baixar o aplicativo Android
+## 📱 Instalação rápida no Android
 
-<a href="https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/app-debug.apk"><img src="https://img.shields.io/badge/⬇️%20BAIXAR%20APK-1f883d?style=for-the-badge&logo=android&logoColor=white" alt="Baixar APK"></a>
+### ⬇️ BAIXAR O APK
 
-**[⬇️ Clique aqui para baixar o APK](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/app-debug.apk)**
+**[TOQUE AQUI PARA BAIXAR O APK MAIS RECENTE](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/app-debug.apk)**
 
-Aplicativo para anotar pedidos e imprimir em impressoras térmicas Bluetooth ESC/POS, incluindo POS 58.
+Depois do download:
 
-### Impressão
-- Android: Bluetooth nativo Classic/SPP.
-- Web/Chrome: Web Bluetooth quando a impressora e o navegador forem compatíveis.
+1. Abra o arquivo `app-debug.apk`.
+2. Autorize o Android a instalar aplicativos desta fonte quando solicitado.
+3. Toque em **Instalar**.
+4. Abra **Portuga — Bloco de Pedidos**.
 
-### Projeto
-Código Android em `bloco-de-notas-android/`.
+> O link acima acompanha automaticamente a versão mais recente publicada no GitHub.
 
-### Release
-O GitHub Actions gera o APK e publica a versão de release quando o commit contém `[release-apk]`.
+## 🌐 Usar pelo Chrome
 
-<!-- [release-apk] -->
+A aplicação web também pode ser usada pelo navegador e pode ser adicionada à tela inicial quando o Chrome oferecer a opção de instalação.
 
+## 🖨️ Impressão térmica
 
-<!-- release v1.0.7 bootstrap HTML [release-apk] -->
+O aplicativo Android possui integração nativa para impressoras Bluetooth ESC/POS, incluindo a linha POS 58 compatível.
 
-<!-- compatibilidade android reforcada 1790899155285 [release-apk] -->
+No Android:
+- ligue e pareie a impressora Bluetooth;
+- abra o aplicativo;
+- use a opção de conexão da impressora;
+- selecione a impressora;
+- envie a comanda para impressão.
 
-<!-- rebuild final Android after script fix [release-apk] -->
+No Chrome, a impressão depende do suporte Bluetooth/Web Bluetooth do navegador e da impressora.
 
-<!-- chrome webview v1.0.9 [release-apk] -->
+## 📦 Projeto
 
+O código Android fica em `bloco-de-notas-android/`.
 
-## Build Android
+A versão Android usa Capacitor e mantém a interface web dentro do aplicativo, com uma ponte nativa para as funções de impressão Bluetooth.
 
-A versão Android é gerada pelo GitHub Actions após alterações na pasta `bloco-de-notas-android`. Para publicar a APK, use a mensagem de commit com `[release-apk]`.
+## 🤖 APK pelo GitHub Actions
 
-[release-apk]
+O repositório possui build automático pelo GitHub Actions.
+
+Cada atualização em `main` recompila o APK. Para publicar uma nova versão em Releases, use uma mensagem de commit contendo:
+
+`[release-apk]`
+
+O APK publicado fica disponível automaticamente em:
+
+`Releases → Latest → app-debug.apk`
+
+## 🔗 Links
+
+- [Repositório GitHub](https://github.com/Mrandrox/portuga-bloco-de-pedidos)
+- [Releases](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases)
+- [Baixar APK mais recente](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/app-debug.apk)
