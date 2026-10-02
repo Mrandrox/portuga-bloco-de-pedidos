@@ -65,6 +65,9 @@ package com.blocodenotas.app;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -79,11 +82,14 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
 import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
+    private static final int MAX_LOCAL_LOAD_RETRIES = 4;
     private View recoveryOverlay;
     private boolean pageLoaded = false;
+    private int localLoadRetries = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -130,6 +136,8 @@ public class MainActivity extends BridgeActivity {
             settings.setLoadsImagesAutomatically(true);
             settings.setAllowFileAccess(false);
             settings.setAllowContentAccess(false);
+            settings.setAllowFileAccessFromFileURLs(false);
+            settings.setAllowUniversalAccessFromFileURLs(false);
             settings.setJavaScriptCanOpenWindowsAutomatically(false);
             settings.setSupportMultipleWindows(false);
             settings.setBuiltInZoomControls(false);
@@ -137,11 +145,58 @@ public class MainActivity extends BridgeActivity {
             webView.setBackgroundColor(Color.rgb(17, 17, 17));
             webView.setVerticalScrollBarEnabled(false);
             webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+            // Mantém o WebViewClient oficial do Capacitor (ponte, servidor local e plugins)
+            // e acrescenta apenas uma recuperação para falhas transitórias do localhost.
+            webView.setWebViewClient(new BridgeWebViewClient(getBridge()) {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (view.getProgress() == 100) {
+                        localLoadRetries = 0;
+                    }
+                }
+
+                @Override
+                public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                    super.onReceivedError(view, request, error);
+
+                    if (!request.isForMainFrame()) return;
+                    String host = request.getUrl() != null ? request.getUrl().getHost() : null;
+                    if (!"localhost".equalsIgnoreCase(host)) return;
+
+                    int code = error != null ? error.getErrorCode() : WebViewClient.ERROR_UNKNOWN;
+                    boolean transientLocalError =
+                        code == WebViewClient.ERROR_HOST_LOOKUP ||
+                        code == WebViewClient.ERROR_CONNECT ||
+                        code == WebViewClient.ERROR_TIMEOUT;
+
+                    if (!transientLocalError || localLoadRetries >= MAX_LOCAL_LOAD_RETRIES) return;
+
+                    final int attempt = ++localLoadRetries;
+                    long delayMs = 350L * attempt;
+                    view.postDelayed(() -> {
+                        if (!pageLoaded && view != null) {
+                            view.reload();
+                        }
+                    }, delayMs);
+                }
+            });
         }
 
+        // Alguns WebViews iniciam a resolução de localhost antes de o servidor local
+        // do Capacitor estar totalmente pronto. A primeira tentativa extra é barata e
+        // evita transformar uma condição transitória em uma tela de erro.
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!pageLoaded && getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().reload();
+            }
+        }, 900);
+
+        // Tempo de tolerância maior para aparelhos lentos/antigos.
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (!pageLoaded) showRecovery();
-        }, 5000);
+        }, 12000);
     }
 
     private void ensureOverlay() {
