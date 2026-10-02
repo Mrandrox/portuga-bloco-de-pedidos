@@ -1,0 +1,9 @@
+{
+  "name": "portuga-comanda-unica",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App Android de comanda única inspirado no Portuga — Bloco de Pedidos.",
+  "scripts": {"build": "npx cap sync android"},
+  "dependencies": {"@capacitor/android": "^8.5.2", "@capacitor/core": "^8.5.2"},
+  "devDependencies": {"@capacitor/cli": "^8.5.2"}
+}

@@ -1,0 +1,10 @@
+{
+  "appId": "com.blocodenotas.comandaunica",
+  "appName": "Portuga — Comanda Única",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {"androidScheme": "https", "hostname": "localhost", "appStartPath": "index.html"},
+  "android": {"minWebViewVersion": 55, "minHuaweiWebViewVersion": 10, "initialFocus": false, "resolveServiceWorkerRequests": true, "webContentsDebuggingEnabled": true, "useLegacyBridge": false},
+  "plugins": {"SystemBars": {"insetsHandling": "native", "style": "DEFAULT", "hidden": false, "animation": "NONE"}},
+  "backgroundColor": "#0b0d10"
+}
