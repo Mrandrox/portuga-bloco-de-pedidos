@@ -24,3 +24,5 @@ O GitHub Actions gera o APK e publica a vers√£o de release quando o commit cont√
 <!-- release v1.0.7 bootstrap HTML [release-apk] -->
 
 <!-- compatibilidade android reforcada 1790899155285 [release-apk] -->
+
+<!-- rebuild final Android after script fix [release-apk] -->
