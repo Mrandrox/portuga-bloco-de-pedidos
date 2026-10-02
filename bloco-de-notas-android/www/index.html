@@ -12,8 +12,8 @@
   (function(){
     var b=window.__PORTUGA_BOOT__={ready:false};
     function fail(msg){var r=document.getElementById("root");if(!r||b.ready)return;r.innerHTML="<div style=\"min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#111;color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif\"><div style=\"max-width:420px;text-align:center\"><div style=\"font-size:24px;font-weight:900\">PORTUGA</div><div style=\"margin-top:10px;font-weight:700\">Não foi possível iniciar a interface.</div><div style=\"margin-top:8px;color:#aaa;font-size:13px\">Atualize o Google Chrome e o Android System WebView e abra novamente.</div><div style=\"margin-top:12px;color:#d4af37;font-size:11px;word-break:break-word\">"+String(msg||"Erro de inicialização.").replace(/[<>&]/g,"")+"<\/div></div></div>"}
-    window.addEventListener("error",function(e){fail(e&&e.message||"Erro JavaScript"),true);
-    window.addEventListener("unhandledrejection",function(e){fail(e&&e.reason&&e.reason.message||"Erro assíncrono"),true);
+    window.addEventListener("error",function(e){fail(e&&e.message||"Erro JavaScript");},true);
+    window.addEventListener("unhandledrejection",function(e){fail(e&&e.reason&&e.reason.message||"Erro assíncrono");},true);
     setTimeout(function(){if(!b.ready)fail("O Chrome/WebView não executou a interface do aplicativo.")},15000);
   })();
   </script>
