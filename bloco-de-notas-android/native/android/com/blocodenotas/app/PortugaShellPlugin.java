@@ -14,32 +14,27 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "PortugaShell")
 public class PortugaShellPlugin extends Plugin {
-
     @PluginMethod
     public void openChrome(PluginCall call) {
-        String url = call.getString("url", "https://www.google.com/");
-        openBrowser(call, url, true);
+        openBrowser(call, call.getString("url", "https://www.google.com/"), true);
     }
 
     @PluginMethod
     public void openBrowser(PluginCall call) {
-        String url = call.getString("url", "https://www.google.com/");
-        openBrowser(call, url, false);
+        openBrowser(call, call.getString("url", "https://www.google.com/"), false);
     }
 
     @PluginMethod
     public void openWebViewSettings(PluginCall call) {
         try {
-            Intent intent = new Intent("android.settings.WEBVIEW_SETTINGS");
-            getActivity().startActivity(intent);
+            getActivity().startActivity(new Intent("android.settings.WEBVIEW_SETTINGS"));
             call.resolve();
         } catch (Exception ignored) {
             try {
-                Intent intent = new Intent(Settings.ACTION_SETTINGS);
-                getActivity().startActivity(intent);
+                getActivity().startActivity(new Intent(Settings.ACTION_SETTINGS));
                 call.resolve();
-            } catch (Exception ex) {
-                call.reject("Não foi possível abrir as configurações do WebView.", ex);
+            } catch (Exception e) {
+                call.reject("Não foi possível abrir as configurações do WebView.", e);
             }
         }
     }
@@ -51,29 +46,29 @@ public class PortugaShellPlugin extends Plugin {
             call.reject("WebView indisponível.");
             return;
         }
-        webView.post(() -> webView.reload());
+        webView.post(webView::reload);
         call.resolve();
     }
 
     @PluginMethod
     public void diagnostics(PluginCall call) {
-        JSObject ret = new JSObject();
+        JSObject result = new JSObject();
         WebView webView = bridge.getWebView();
-        ret.put("appUrl", bridge.getAppUrl());
-        ret.put("hostname", bridge.getHost());
-        ret.put("scheme", bridge.getScheme());
-        ret.put("webViewPackage", android.webkit.WebView.getCurrentWebViewPackage() != null
-            ? android.webkit.WebView.getCurrentWebViewPackage().packageName : "desconhecido");
-        ret.put("webViewVersion", android.webkit.WebView.getCurrentWebViewPackage() != null
-            ? android.webkit.WebView.getCurrentWebViewPackage().versionName : "desconhecida");
-        ret.put("currentUrl", webView != null ? webView.getUrl() : "");
-        call.resolve(ret);
+        android.content.pm.PackageInfo info = WebView.getCurrentWebViewPackage();
+
+        result.put("appUrl", bridge.getAppUrl());
+        result.put("hostname", bridge.getHost());
+        result.put("scheme", bridge.getScheme());
+        result.put("webViewPackage", info != null ? info.packageName : "desconhecido");
+        result.put("webViewVersion", info != null ? info.versionName : "desconhecida");
+        result.put("currentUrl", webView != null ? String.valueOf(webView.getUrl()) : "");
+        call.resolve(result);
     }
 
     private void openBrowser(PluginCall call, String url, boolean preferChrome) {
         try {
-            Uri uri = Uri.parse(url);
-            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+
             if (preferChrome) {
                 intent.setPackage("com.android.chrome");
                 try {
@@ -84,10 +79,11 @@ public class PortugaShellPlugin extends Plugin {
                     intent.setPackage(null);
                 }
             }
+
             getActivity().startActivity(intent);
             call.resolve();
-        } catch (Exception ex) {
-            call.reject("Não foi possível abrir o navegador.", ex);
+        } catch (Exception e) {
+            call.reject("Não foi possível abrir o navegador.", e);
         }
     }
 }
