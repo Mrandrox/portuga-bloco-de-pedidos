@@ -79,6 +79,8 @@ public class MainActivity extends BridgeActivity {
             settings.setLoadsImagesAutomatically(true);
             settings.setAllowFileAccess(true);
             settings.setAllowContentAccess(true);
+            settings.setJavaScriptCanOpenWindowsAutomatically(true);
+            settings.setSupportMultipleWindows(false);
             settings.setBuiltInZoomControls(false);
             settings.setDisplayZoomControls(false);
             webView.setBackgroundColor(0xFF111111);
@@ -86,8 +88,6 @@ public class MainActivity extends BridgeActivity {
     }
 }
 JAVA
-
-A
 
 python3 - "$MANIFEST" <<'PY'
 from pathlib import Path
