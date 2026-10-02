@@ -28,3 +28,10 @@ O GitHub Actions gera o APK e publica a versão de release quando o commit cont�
 <!-- rebuild final Android after script fix [release-apk] -->
 
 <!-- chrome webview v1.0.9 [release-apk] -->
+
+
+## Build Android
+
+A versão Android é gerada pelo GitHub Actions após alterações na pasta `bloco-de-notas-android`. Para publicar a APK, use a mensagem de commit com `[release-apk]`.
+
+[release-apk]
