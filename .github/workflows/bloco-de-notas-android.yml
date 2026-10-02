@@ -60,16 +60,18 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-apk]')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.11
+          tag_name: v1.0.12
           target_commitish: ${{ github.sha }}
-          name: Portuga Bloco de Pedidos v1.0.11
+          name: Portuga Bloco de Pedidos v1.0.12
           body: |
-            Shell Android isolado e recuperação de WebView.
+            Shell Android isolado com recuperação robusta do WebView.
+            - usa o HTML original como conteúdo local do app, sem depender do Chrome para iniciar a interface;
             - mantém HTTPS + localhost, configuração oficial do servidor local do Capacitor;
-            - mantém a interface HTML atual sem depender do Chrome como navegador externo;
-            - adiciona camada nativa de recuperação com tentar novamente, Chrome, atualização do WebView e diagnóstico;
+            - adiciona retry automático para ERR_NAME_NOT_RESOLVED/host lookup, connection e timeout transitórios do localhost;
+            - mantém a camada nativa de recuperação com tentar novamente, Chrome, atualização do WebView e diagnóstico;
             - mantém a ponte Bluetooth ESC/POS para POS-58;
-            - registra um plugin nativo PortugaShell para saídas seguras do app;
+            - registra o plugin nativo PortugaShell para saídas seguras do app;
+            - aumenta a tolerância de inicialização para aparelhos Android mais lentos;
             - valida o script nativo antes da compilação.
           files: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
