@@ -30,7 +30,10 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
-      - name: Apply Bluetooth printer bridge
+      - name: Validate native build script
+        run: bash -n ./aplicar-impressora-android.sh
+
+      - name: Apply Bluetooth printer bridge and shell
         run: bash ./aplicar-impressora-android.sh
 
       - name: Sync Capacitor
@@ -57,15 +60,16 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-apk]')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.10
+          tag_name: v1.0.11
           target_commitish: ${{ github.sha }}
-          name: Portuga Bloco de Pedidos v1.0.10
+          name: Portuga Bloco de Pedidos v1.0.11
           body: |
-            Correção de compatibilidade WebView/Chrome.
-            - troca o hostname local de localhost para 127.0.0.1 para evitar falha de resolução DNS do loopback;
-            - usa HTTP local para máxima compatibilidade com WebViews antigos;
-            - mantém a interface HTML atual;
+            Shell Android isolado e recuperação de WebView.
+            - mantém HTTPS + localhost, configuração oficial do servidor local do Capacitor;
+            - mantém a interface HTML atual sem depender do Chrome como navegador externo;
+            - adiciona camada nativa de recuperação com tentar novamente, Chrome, atualização do WebView e diagnóstico;
             - mantém a ponte Bluetooth ESC/POS para POS-58;
-            - usa SystemBars em modo nativo para compatibilidade Android moderno.
+            - registra um plugin nativo PortugaShell para saídas seguras do app;
+            - valida o script nativo antes da compilação.
           files: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
