@@ -1,8 +1,8 @@
 {
   "name": "bloco-de-notas-android",
-  "version": "1.0.14",
+  "version": "1.1.0",
   "private": true,
-  "description": "Versão Android do Portuga — Bloco de Pedidos.",
+  "description": "Portuga — Bloco de Pedidos para Android com comanda contínua por cliente e Bluetooth nativo POS-58.",
   "scripts": {
     "android:add": "npx cap add android",
     "android:prepare": "if [ ! -d android ]; then npx cap add android; fi && ./aplicar-impressora-android.sh && npx cap sync android",
