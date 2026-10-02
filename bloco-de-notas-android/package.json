@@ -1,8 +1,8 @@
 {
   "name": "bloco-de-notas-android",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "private": true,
-  "description": "Versão Android do projeto Bloco de Notas.",
+  "description": "Versão Android do Portuga — Bloco de Pedidos.",
   "scripts": {
     "android:add": "npx cap add android",
     "android:prepare": "if [ ! -d android ]; then npx cap add android; fi && ./aplicar-impressora-android.sh && npx cap sync android",
