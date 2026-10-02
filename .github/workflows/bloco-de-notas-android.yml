@@ -1,10 +1,8 @@
 name: Portuga — Bloco de Pedidos Android APK
-# Release APK 1.0.14
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -16,6 +14,7 @@ jobs:
     defaults:
       run:
         working-directory: bloco-de-notas-android
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,66 +24,69 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Create Android project
-        run: npx cap add android
-
-      - name: Validate native build script
-        run: bash -n ./aplicar-impressora-android.sh
-
-      - name: Apply Bluetooth printer bridge and shell
-        run: bash ./aplicar-impressora-android.sh
-
-      - name: Inject menu category and persistent client tabs
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path("www/index.html")
-          js = Path("www/menu-clientes.js").read_text(encoding="utf-8")
-          src = html.read_text(encoding="utf-8")
-          marker = "</body>"
-          if "portuga-client-tabs" not in src:
-              src = src.replace(marker, '<script>\n' + js + '\n</script>\n' + marker, 1)
-          html.write_text(src, encoding="utf-8")
-          print("Recursos de categorias/clientes injetados no app.")
-          PY
-
-      - name: Sync Capacitor
-        run: npx cap sync android
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: "17"
 
-      - name: Build APK
-        run: cd android && ./gradlew assembleDebug
+      - name: Instalar dependências
+        run: npm install
 
-      - name: Upload APK artifact
+      - name: Criar projeto Android
+        run: npx cap add android
+
+      - name: Aplicar camada Android
+        run: |
+          bash -n ./aplicar-impressora-android.sh
+          bash ./aplicar-impressora-android.sh
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - name: Verificar código
+        run: |
+          test -f android/app/src/main/java/com/blocodenotas/app/MainActivity.java
+          test -f android/app/src/main/java/com/blocodenotas/app/BluetoothPrinterPlugin.java
+          test -f android/app/src/main/java/com/blocodenotas/app/PortugaShellPlugin.java
+          node --check www/menu-clientes.js
+
+      - name: Gerar APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Preparar arquivo para download
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Portuga-Bloco-de-Pedidos.apk
+          ls -lh Portuga-Bloco-de-Pedidos.apk
+
+      - name: Publicar artefato do build
         uses: actions/upload-artifact@v4
         with:
-          name: portuga-bloco-de-pedidos-android-1.0.14
-          path: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
+          name: Portuga-Bloco-de-Pedidos
+          path: bloco-de-notas-android/Portuga-Bloco-de-Pedidos.apk
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish APK to Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-apk]')
+      - name: Publicar Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.14
-          target_commitish: ${{ github.sha }}
-          name: Portuga Bloco de Pedidos v1.0.14
+          tag_name: v1.1.${{ github.run_number }}
+          name: Portuga — Bloco de Pedidos v1.1.${{ github.run_number }}
           body: |
-            Atualização do Bloco de Pedidos Android.
-            - abas de Lanches, Petiscos, Pizzas e Bebidas no construtor do pedido;
-            - abas persistentes por cliente/comanda;
-            - vários pedidos podem ser lançados para o mesmo cliente sem criar uma nova aba;
-            - dados das abas ficam no armazenamento local do aparelho;
-            - mantém a ponte Bluetooth ESC/POS para POS-58;
-            - mantém o ambiente Android baseado em WebView/Chromium e o fluxo existente do cardápio.
-          files: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
+            APK instalável do Portuga — Bloco de Pedidos.
+
+            - comanda contínua por cliente;
+            - subtotal individual por cliente;
+            - Lanches, Petiscos, Pizzas e Bebidas;
+            - Bluetooth Classic/SPP nativo para POS-58;
+            - reconexão automática da impressora;
+            - logo do projeto usada no ícone do aplicativo.
+
+            Download direto:
+            https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk
+          files: bloco-de-notas-android/Portuga-Bloco-de-Pedidos.apk
           generate_release_notes: true
+          make_latest: true
