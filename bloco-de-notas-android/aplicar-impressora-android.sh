@@ -6,6 +6,7 @@ JAVA_DIR="$ANDROID/app/src/main/java/com/blocodenotas/app"
 MANIFEST="$ANDROID/app/src/main/AndroidManifest.xml"
 MAIN="$JAVA_DIR/MainActivity.java"
 PLUGIN_SRC="$ROOT/native/android/com/blocodenotas/app/BluetoothPrinterPlugin.java"
+SHELL_SRC="$ROOT/native/android/com/blocodenotas/app/PortugaShellPlugin.java"
 
 if [[ ! -d "$ANDROID" ]]; then
   echo "Pasta android/ não existe. Rode: npx cap add android"
@@ -14,6 +15,7 @@ fi
 
 mkdir -p "$JAVA_DIR"
 cp "$PLUGIN_SRC" "$JAVA_DIR/BluetoothPrinterPlugin.java"
+cp "$SHELL_SRC" "$JAVA_DIR/PortugaShellPlugin.java"
 
 # Tema/splash leve e compatibilidade WebView.
 RES="$ANDROID/app/src/main/res"
@@ -60,16 +62,65 @@ fi
 cat > "$MAIN" <<'JAVA'
 package com.blocodenotas.app;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
+    private View recoveryOverlay;
+    private boolean pageLoaded = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(BluetoothPrinterPlugin.class);
+        registerPlugin(PortugaShellPlugin.class);
+
+        // O listener observa o WebView sem substituir o WebViewClient do Capacitor.
+        // Assim a ponte JS/Android e a impressão continuam sob controle do Capacitor.
+        bridgeBuilder.addWebViewListener(new WebViewListener() {
+            @Override
+            public void onPageStarted(WebView webView) {
+                pageLoaded = false;
+                hideRecovery();
+            }
+
+            @Override
+            public void onPageLoaded(WebView webView) {
+                pageLoaded = true;
+                hideRecovery();
+            }
+
+            @Override
+            public void onReceivedError(WebView webView) {
+                if (!pageLoaded) {
+                    showRecovery();
+                }
+            }
+
+            @Override
+            public boolean onRenderProcessGone(WebView webView, android.webkit.RenderProcessGoneDetail detail) {
+                showRecovery();
+                return false;
+            }
+        });
+
         super.onCreate(savedInstanceState);
+
         WebView webView = getBridge().getWebView();
         if (webView != null) {
             WebSettings settings = webView.getSettings();
@@ -77,14 +128,162 @@ public class MainActivity extends BridgeActivity {
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
             settings.setLoadsImagesAutomatically(true);
-            settings.setAllowFileAccess(true);
-            settings.setAllowContentAccess(true);
-            settings.setJavaScriptCanOpenWindowsAutomatically(true);
+            settings.setAllowFileAccess(false);
+            settings.setAllowContentAccess(false);
+            settings.setJavaScriptCanOpenWindowsAutomatically(false);
             settings.setSupportMultipleWindows(false);
             settings.setBuiltInZoomControls(false);
             settings.setDisplayZoomControls(false);
-            webView.setBackgroundColor(0xFF111111);
+            webView.setBackgroundColor(Color.rgb(17, 17, 17));
+            webView.setVerticalScrollBarEnabled(false);
+            webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         }
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!pageLoaded) showRecovery();
+        }, 5000);
+    }
+
+    private void ensureOverlay() {
+        if (recoveryOverlay != null) return;
+
+        ViewGroup root = findViewById(android.R.id.content);
+        if (root == null) return;
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER_HORIZONTAL);
+        box.setPadding(44, 56, 44, 44);
+        box.setBackgroundColor(Color.rgb(17, 17, 17));
+
+        TextView brand = new TextView(this);
+        brand.setText("PORTUGA");
+        brand.setTextColor(Color.rgb(212, 175, 55));
+        brand.setTextSize(30);
+        brand.setGravity(Gravity.CENTER);
+        brand.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        TextView title = new TextView(this);
+        title.setText("Ambiente do aplicativo");
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(22);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(0, 24, 0, 10);
+
+        TextView message = new TextView(this);
+        message.setText("A interface interna não respondeu. O aplicativo está protegido e você pode tentar novamente sem sair do ambiente.");
+        message.setTextColor(Color.LTGRAY);
+        message.setTextSize(16);
+        message.setGravity(Gravity.CENTER);
+        message.setPadding(0, 0, 0, 28);
+
+        Button retry = makeButton("Tentar novamente");
+        retry.setOnClickListener(v -> {
+            hideRecovery();
+            pageLoaded = false;
+            WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+            if (webView != null) webView.postDelayed(() -> webView.reload(), 180);
+        });
+
+        Button chrome = makeButton("Abrir saída no Chrome");
+        chrome.setOnClickListener(v -> openChrome());
+
+        Button webview = makeButton("Atualizar Chrome / WebView");
+        webview.setOnClickListener(v -> openWebViewUpdate());
+
+        Button diagnostics = makeButton("Diagnóstico");
+        diagnostics.setOnClickListener(v -> showDiagnostics());
+
+        box.addView(brand, new LinearLayout.LayoutParams(-1, -2));
+        box.addView(title, new LinearLayout.LayoutParams(-1, -2));
+        box.addView(message, new LinearLayout.LayoutParams(-1, -2));
+        box.addView(retry, buttonParams());
+        box.addView(chrome, buttonParams());
+        box.addView(webview, buttonParams());
+        box.addView(diagnostics, buttonParams());
+
+        root.addView(box, new ViewGroup.LayoutParams(-1, -1));
+        recoveryOverlay = box;
+        recoveryOverlay.setVisibility(View.GONE);
+    }
+
+    private LinearLayout.LayoutParams buttonParams() {
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
+        p.setMargins(0, 0, 0, 14);
+        return p;
+    }
+
+    private Button makeButton(String text) {
+        Button b = new Button(this);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setTextSize(16);
+        return b;
+    }
+
+    private void showRecovery() {
+        runOnUiThread(() -> {
+            ensureOverlay();
+            if (recoveryOverlay != null) recoveryOverlay.setVisibility(View.VISIBLE);
+        });
+    }
+
+    private void hideRecovery() {
+        runOnUiThread(() -> {
+            if (recoveryOverlay != null) recoveryOverlay.setVisibility(View.GONE);
+        });
+    }
+
+    private void openChrome() {
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/chrome/"));
+            i.setPackage("com.android.chrome");
+            startActivity(i);
+        } catch (ActivityNotFoundException ex) {
+            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.google.com/chrome/"));
+            startActivity(i);
+        }
+    }
+
+    private void openWebViewUpdate() {
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=com.google.android.webview"));
+            startActivity(i);
+        } catch (Exception ex) {
+            Intent i = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.webview"));
+            startActivity(i);
+        }
+    }
+
+    private void showDiagnostics() {
+        String pkg = "desconhecido";
+        String version = "desconhecida";
+        try {
+            android.content.pm.PackageInfo info = WebView.getCurrentWebViewPackage();
+            if (info != null) {
+                pkg = info.packageName;
+                version = info.versionName;
+            }
+        } catch (Exception ignored) {}
+
+        TextView info = new TextView(this);
+        info.setText("WebView: " + pkg + "\nVersão: " + version + "\nApp: " + (getBridge() != null ? getBridge().getAppUrl() : "indisponível"));
+        info.setTextColor(Color.WHITE);
+        info.setTextSize(15);
+        info.setPadding(30, 30, 30, 30);
+
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Diagnóstico do Portuga")
+            .setView(info)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Configurações do WebView", (d, w) -> {
+                try {
+                    startActivity(new Intent("android.settings.WEBVIEW_SETTINGS"));
+                } catch (Exception ex) {
+                    startActivity(new Intent(Settings.ACTION_SETTINGS));
+                }
+            })
+            .show();
     }
 }
 JAVA
