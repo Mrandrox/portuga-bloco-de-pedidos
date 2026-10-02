@@ -7,10 +7,5 @@
     "androidScheme": "https",
     "errorPath": "error.html"
   },
-  "backgroundColor": "#111111",
-  "android": {
-    "backgroundColor": "#111111",
-    "minWebViewVersion": 55,
-    "initialFocus": true
-  }
+  "backgroundColor": "#111111"
 }
