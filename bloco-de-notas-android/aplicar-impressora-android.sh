@@ -37,19 +37,27 @@ if 'android.permission.BLUETOOTH_CONNECT' not in text:
     marker = text.find(">", text.find("<manifest"))
     text = text[:marker + 1] + perms + text[marker + 1:]
 
-if 'android:roundIcon=' in text:
-    text = re.sub(
-        r'android:roundIcon="[^"]*"',
-        'android:roundIcon="@mipmap/ic_launcher_round"',
-        text,
-        count=1
-    )
-else:
-    text = text.replace(
-        "<application ",
-        '<application android:roundIcon="@mipmap/ic_launcher_round" ',
-        1
-    )
+text = re.sub(
+    r'android:icon="[^"]*"',
+    'android:icon="@mipmap/ic_launcher"',
+    text,
+    count=1
+) if 'android:icon=' in text else text.replace(
+    "<application ",
+    '<application android:icon="@mipmap/ic_launcher" ',
+    1
+)
+
+text = re.sub(
+    r'android:roundIcon="[^"]*"',
+    'android:roundIcon="@mipmap/ic_launcher_round"',
+    text,
+    count=1
+) if 'android:roundIcon=' in text else text.replace(
+    "<application ",
+    '<application android:roundIcon="@mipmap/ic_launcher_round" ',
+    1
+)
 
 manifest.write_text(text, encoding="utf-8")
 PY
@@ -82,4 +90,4 @@ for density in [
 (res / "drawable-nodpi" / "portuga_splash_logo.png").write_bytes(data)
 PY
 
-echo "Ponte Android POS-58 aplicada."
+echo "Ponte Android POS-58 e ícone oficial da logo aplicados."
