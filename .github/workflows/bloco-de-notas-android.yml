@@ -1,5 +1,5 @@
 name: Portuga — Bloco de Pedidos Android APK
-# Release APK 1.0.12
+# Release APK 1.0.13
 
 on:
   push:
@@ -37,6 +37,20 @@ jobs:
       - name: Apply Bluetooth printer bridge and shell
         run: bash ./aplicar-impressora-android.sh
 
+      - name: Inject menu category and persistent client tabs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path("www/index.html")
+          js = Path("www/menu-clientes.js").read_text(encoding="utf-8")
+          src = html.read_text(encoding="utf-8")
+          marker = "</body>"
+          if "portuga-client-tabs" not in src:
+              src = src.replace(marker, '<script>\n' + js + '\n</script>\n' + marker, 1)
+          html.write_text(src, encoding="utf-8")
+          print("Recursos de categorias/clientes injetados no app.")
+          PY
+
       - name: Sync Capacitor
         run: npx cap sync android
 
@@ -52,7 +66,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: portuga-bloco-de-pedidos-android
+          name: portuga-bloco-de-pedidos-android-1.0.13
           path: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
@@ -61,18 +75,16 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release-apk]')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.12
+          tag_name: v1.0.13
           target_commitish: ${{ github.sha }}
-          name: Portuga Bloco de Pedidos v1.0.12
+          name: Portuga Bloco de Pedidos v1.0.13
           body: |
-            Shell Android isolado com recuperação robusta do WebView.
-            - usa o HTML original como conteúdo local do app, sem depender do Chrome para iniciar a interface;
-            - mantém HTTPS + localhost, configuração oficial do servidor local do Capacitor;
-            - adiciona retry automático para ERR_NAME_NOT_RESOLVED/host lookup, connection e timeout transitórios do localhost;
-            - mantém a camada nativa de recuperação com tentar novamente, Chrome, atualização do WebView e diagnóstico;
+            Atualização do Bloco de Pedidos Android.
+            - abas de Lanches, Petiscos, Pizzas e Bebidas no construtor do pedido;
+            - abas persistentes por cliente/comanda;
+            - vários pedidos podem ser lançados para o mesmo cliente sem criar uma nova aba;
+            - dados das abas ficam no armazenamento local do aparelho;
             - mantém a ponte Bluetooth ESC/POS para POS-58;
-            - registra o plugin nativo PortugaShell para saídas seguras do app;
-            - aumenta a tolerância de inicialização para aparelhos Android mais lentos;
-            - valida o script nativo antes da compilação.
+            - mantém o ambiente Android baseado em WebView/Chromium e o fluxo existente do cardápio.
           files: bloco-de-notas-android/android/app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
