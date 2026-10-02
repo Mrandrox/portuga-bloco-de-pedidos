@@ -457,7 +457,7 @@
     var style = document.createElement("style");
     style.id = "portuga-client-style";
     style.textContent = [
-      "#portuga-client-tabs{position:relative;z-index:20;box-sizing:border-box;width:100%;background:linear-gradient(180deg,#17120a 0%,#21170b 100%);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;border-bottom:1px solid rgba(212,175,55,.42);box-shadow:0 5px 18px rgba(0,0,0,.18)}",
+      "#portuga-client-tabs{position:relative;z-index:20;box-sizing:border-box;width:100%;background:linear-gradient(180deg,#17120a 0%,#21170b 100%);color:#fff;padding:max(50px,env(safe-area-inset-top,0px)) 14px 10px;border-bottom:1px solid rgba(212,175,55,.42);box-shadow:0 5px 18px rgba(0,0,0,.18)}",
       ".pct-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;width:100%;max-width:960px;margin:0 auto}",
       ".pct-title-wrap{min-width:0;padding-top:1px}",
       ".pct-title-wrap strong{display:block;color:#f5c542;font-size:18px;line-height:1.2;font-weight:900}",
