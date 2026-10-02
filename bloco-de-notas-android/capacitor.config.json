@@ -5,7 +5,15 @@
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
-    "errorPath": "error.html"
+    "hostname": "localhost",
+    "appStartPath": "index.html"
+  },
+  "android": {
+    "minWebViewVersion": 55,
+    "minHuaweiWebViewVersion": 10,
+    "initialFocus": false,
+    "resolveServiceWorkerRequests": true,
+    "webContentsDebuggingEnabled": true
   },
   "backgroundColor": "#111111"
 }
