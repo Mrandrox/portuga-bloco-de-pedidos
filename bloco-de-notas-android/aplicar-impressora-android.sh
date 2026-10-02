@@ -68,6 +68,7 @@ import android.graphics.Color;
 import android.graphics.Bitmap;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebViewClient;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
