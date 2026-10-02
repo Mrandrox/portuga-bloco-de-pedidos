@@ -13,7 +13,7 @@
     "minHuaweiWebViewVersion": 10,
     "initialFocus": false,
     "resolveServiceWorkerRequests": true,
-    "webContentsDebuggingEnabled": true,
+    "webContentsDebuggingEnabled": false,
     "useLegacyBridge": false
   },
   "plugins": {
