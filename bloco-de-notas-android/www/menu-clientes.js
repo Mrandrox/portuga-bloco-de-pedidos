@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var CLIENTS_KEY = "portuga.clientes.tabs.v3";
+  var CLIENTS_KEY = "portuga.clientes.tabs.v2";
   var ORDERS_KEY = "blocoPedidos.pedidos";
   var activeClientId = null;
   var lastSignature = "";
