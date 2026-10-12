@@ -20,13 +20,17 @@ const bool = (key, fallback = false) => {
   const value = env(key, String(fallback)).toLowerCase();
   return value === 'true' || value === '1';
 };
+const positiveInt = (key, fallback, min, max) => {
+  const value = Number(env(key, String(fallback)));
+  return Number.isSafeInteger(value) && value >= min && value <= max ? value : fallback;
+};
 
 export const config = Object.freeze({
   nodeEnv: env('NODE_ENV', 'development'),
   host: env('HOST', '127.0.0.1'),
-  port: Number(env('PORT', '8080')),
-  publicAppOrigin: env('PUBLIC_APP_ORIGIN'),
-  maxRequestBytes: Math.max(1024, Number(env('MAX_REQUEST_BYTES', '1048576'))),
+  port: positiveInt('PORT', 8080, 1, 65535),
+  allowedOrigins: env('PUBLIC_APP_ORIGIN').split(',').map(x => x.trim()).filter(Boolean),
+  maxRequestBytes: positiveInt('MAX_REQUEST_BYTES', 1048576, 1024, 10485760),
   olist: Object.freeze({
     baseUrl: env('OLIST_API_BASE_URL'),
     token: env('OLIST_API_TOKEN'),
