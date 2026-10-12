@@ -11,6 +11,17 @@ function send(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  if (!config.allowedOrigins.includes(origin)) return false;
+  res.setHeader('access-control-allow-origin', origin);
+  res.setHeader('vary', 'Origin');
+  res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+  res.setHeader('access-control-allow-headers', 'Content-Type, Authorization, X-Request-Id');
+  return true;
+}
+
 async function readRawBody(req) {
   const chunks = [];
   let size = 0;
@@ -29,6 +40,7 @@ async function readRawBody(req) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
+  if (!applyCors(req, res)) return send(res, 403, { error: 'ORIGIN_NOT_ALLOWED' });
   if (req.method === 'OPTIONS') {
     res.writeHead(204, { 'cache-control': 'no-store' });
     return res.end();
@@ -52,7 +64,6 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && url.pathname === '/api/orders') {
-    // Fechado por padrão: não aceita nem confirma vendas sem mapeamento, autenticação e homologação.
     return send(res, 503, {
       error: 'ORDER_CREATION_NOT_READY',
       message: 'O registro de pedidos será habilitado após validar a API Olist, autenticação do cliente e fluxo de homologação.'
@@ -72,10 +83,7 @@ const server = http.createServer(async (req, res) => {
       if (!config.whatsapp.enabled || !verifyWebhookSignature(rawBody, req.headers['x-hub-signature-256'])) {
         return send(res, 401, { error: 'INVALID_WEBHOOK_SIGNATURE' });
       }
-      // Recebe e valida a assinatura; o processamento de mensagens fica desativado
-      // até implementar deduplicação persistente, consentimento e ligação ao fluxo de pedidos.
-      let payload;
-      try { payload = JSON.parse(rawBody.toString('utf8')); } catch {
+      try { JSON.parse(rawBody.toString('utf8')); } catch {
         return send(res, 400, { error: 'INVALID_JSON' });
       }
       return send(res, 200, { received: true, processing: false, note: 'Webhook validado; processamento de mensagens ainda não habilitado.' });
