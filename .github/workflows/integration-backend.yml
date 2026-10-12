@@ -1,0 +1,39 @@
+name: Portuga integration backend checks
+
+on:
+  push:
+    branches:
+      - feat/olist-whatsapp-integration
+    paths:
+      - "integrations/olist-whatsapp/backend/**"
+      - ".github/workflows/integration-backend.yml"
+  pull_request:
+    paths:
+      - "integrations/olist-whatsapp/backend/**"
+      - ".github/workflows/integration-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/olist-whatsapp/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js 24 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify syntax
+        run: |
+          node --check src/config.js
+          node --check src/olist-adapter.js
+          node --check src/whatsapp-webhook.js
+          node --check src/server.js
+      - name: Run tests
+        run: npm test
