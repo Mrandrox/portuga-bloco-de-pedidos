@@ -12,12 +12,11 @@
 ## Instalação local para configuração
 
 1. Copie esta pasta para a máquina/servidor do cliente.
-2. Copie `.env.example` para `.env`.
-3. Preencha apenas as variáveis para as quais já existam valores/documentação oficial.
-4. Rode `npm test`.
-5. Rode `npm start`.
-6. Abra `http://127.0.0.1:8080/health`; deve retornar `{"status":"ok",...}`.
-7. Abra `http://127.0.0.1:8080/api/config`; mostra apenas indicadores booleanos, nunca tokens.
+2. No Windows, execute `powershell -ExecutionPolicy Bypass -File .\\setup.ps1`; no Linux/macOS, execute `sh setup.sh`. Os scripts criam `.env` sem sobrescrever um arquivo existente e executam os testes.
+3. Edite `.env` e preencha somente variáveis respaldadas pela documentação oficial da API.
+4. Rode `npm start`.
+5. Abra `http://127.0.0.1:8080/health`; deve retornar `{"status":"ok",...}`.
+6. Abra `http://127.0.0.1:8080/api/config`; mostra apenas indicadores booleanos, nunca tokens.
 
 ### Docker
 
@@ -40,6 +39,7 @@ Edite `.env` na máquina do cliente:
 - `OLIST_API_TOKEN`: token secreto emitido para a integração.
 - `OLIST_AUTH_HEADER` / `OLIST_AUTH_SCHEME`: conforme a documentação (ex.: Authorization/Bearer, somente se confirmado).
 - `OLIST_PRODUCTS_PATH`: caminho relativo exato da operação de catálogo.
+- `PUBLIC_APP_ORIGIN`: origens autorizadas separadas por vírgula, por exemplo `https://localhost,https://pedidos.exemplo.com`; use os domínios reais do app e do site. O valor padrão não autoriza origens de navegador externas.
 - `OLIST_ORDER_CREATE_PATH`: reservar para a operação de pedido confirmada na documentação; o endpoint sozinho não habilita o pedido.
 - `OLIST_ORDER_CREATE_ENABLED`: permanece `false` até a implementação do payload, autenticação, idempotência e testes.
 
