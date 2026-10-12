@@ -61,6 +61,10 @@ Guardar esses valores no gerenciador de segredos do servidor. Nunca incluí-los 
 - HTML, APK e impressão POS-58 existentes permanecem inalterados até teste de regressão.
 - Ativação de produção exige aprovação explícita do proprietário da loja.
 
+## Preparação para a visita ao cliente
+
+Use o [checklist da visita](./CLIENT-VISIT-CHECKLIST.md) para reunir documentação, confirmar permissões e planejar testes sem expor credenciais. Ele cobre Olist, WhatsApp/Meta, cardápio, POS-58, ambiente e critérios de aceite.
+
 ## Próxima ação
 
 Anexar a documentação da API ERP da Olist (ou fornecer seu link público) e confirmar quais endpoints estão habilitados na conta. Depois disso, implementar o adaptador real e testes de contrato em uma branch separada.
