@@ -1,18 +1,17 @@
 # Portuga — Bloco de Pedidos
 
-Sistema de anotações e pedidos para atendimento.
+Sistema de pedidos e comandas para atendimento. A branch `main` permanece separada da preparação das integrações.
 
-## Android
+## Android existente
 
 **[BAIXAR O APK MAIS RECENTE](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)**
 
-A versão Android mantém a aplicação web atual e adiciona:
+A versão Android existente foi projetada para manter a aplicação web atual e inclui fluxo de comanda contínua e impressão POS-58, sujeito a testes no dispositivo real.
 
-- uma comanda contínua por cliente;
-- subtotal individual por cliente;
-- atalhos de Lanches, Petiscos, Pizzas e Bebidas;
-- Bluetooth Classic/SPP nativo para impressoras POS-58;
-- reconexão automática da impressora;
-- download do APK por GitHub Releases.
+## Preparação da plataforma de pedidos e integrações
 
-Projeto Android: `bloco-de-notas-android/`.
+- [Plano Android, cliente e Google Play](docs/ANDROID-PLAY-ROADMAP.md)
+- [Backend de integração — instalação e configuração na máquina do cliente](integrations/olist-whatsapp/backend/README.md)
+- [Plano técnico Olist + WhatsApp](integrations/olist-whatsapp/README.md)
+
+**Importante:** o backend é um scaffold de integração com proteções fail-closed. O catálogo exige os caminhos oficiais da API Olist; criação de pedidos e processamento automático de mensagens permanecem desativados até implementar e testar o mapeamento específico da conta. Não insira segredos no repositório.
