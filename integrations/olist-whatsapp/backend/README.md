@@ -51,14 +51,14 @@ Para WhatsApp, preencha `WHATSAPP_VERIFY_TOKEN`, `META_APP_SECRET`, `WHATSAPP_AC
 - `GET /api/config`: mostra quais integrações estão configuradas (sem segredos).
 - `GET /api/catalog`: consulta o caminho de catálogo configurado; falha fechado quando não configurado.
 - `GET /webhooks/whatsapp`: verificação do webhook Meta.
-- `POST /webhooks/whatsapp`: verifica assinatura HMAC SHA-256; por enquanto não processa mensagens.
+- `POST /webhooks/whatsapp`: verifica assinatura HMAC SHA-256; quando `WHATSAPP_ENABLED=true`, `WHATSAPP_AI_ENABLED=true` e as credenciais estiverem configuradas, processa mensagens de texto com IA e responde pela Cloud API. A configuração de IA fica desligada por padrão.
 - `POST /api/orders`: intencionalmente responde 503 até a integração de pedidos ser implementada e testada.
 
 ## O que ainda precisa de adaptação real
 
 A API Olist pode variar conforme produto, conta e modalidade de integração. O adaptador de criação de pedido precisa mapear explicitamente campos, IDs de produtos/variações, preços, estoque, cliente, entrega, impostos/descontos, estados e resposta do pedido. Não enviar payload arbitrário diretamente à API e não confirmar um pedido até haver confirmação inequívoca do sistema de destino.
 
-O processamento WhatsApp precisa de armazenamento persistente e idempotente de IDs de mensagens, controle de reenvios, política de retenção, transferência para atendente humano e envio de respostas usando a versão documentada da Graph API. Esta estrutura não envia mensagens automaticamente.
+O processamento atual de WhatsApp é uma etapa de piloto: a deduplicação é apenas em memória e pode perder estado após reinício; não existe fila durável nem painel de atendimento humano. Antes de produção, implementar armazenamento persistente/idempotência distribuída, fila durável, política de retenção, handoff real para atendente e testes de contrato da Graph API. A IA está instruída a não inventar preços/estoque nem confirmar pedidos.
 
 ## Segurança antes de produção
 
