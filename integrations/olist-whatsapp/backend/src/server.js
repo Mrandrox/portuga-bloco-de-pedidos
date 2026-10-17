@@ -2,6 +2,33 @@ import http from 'node:http';
 import { config, publicConfig } from './config.js';
 import { OlistAdapter } from './olist-adapter.js';
 import { verifyWebhookChallenge, verifyWebhookSignature } from './whatsapp-webhook.js';
+import { extractIncomingTextMessages, generateAiReply, sendWhatsAppText } from './whatsapp-ai.js';
+
+// Temporary in-process deduplication only. Production must replace this with a durable queue/store.
+const processedMessageIds = new Set();
+const MAX_REMEMBERED_MESSAGES = 5000;
+
+async function processWhatsAppPayload(payload) {
+  if (!config.whatsapp.enabled || !config.whatsapp.aiEnabled || !config.whatsapp.openAiApiKey) return;
+  const messages = extractIncomingTextMessages(payload);
+  for (const message of messages) {
+    if (processedMessageIds.has(message.id)) continue;
+    processedMessageIds.add(message.id);
+    if (processedMessageIds.size > MAX_REMEMBERED_MESSAGES) {
+      const oldest = processedMessageIds.values().next().value;
+      if (oldest) processedMessageIds.delete(oldest);
+    }
+    try {
+      const reply = message.body
+        ? await generateAiReply(message.body)
+        : 'Olá! No momento, consigo entender mensagens de texto. Vou precisar que você escreva sua dúvida aqui, por favor.';
+      await sendWhatsAppText(message.from, reply);
+    } catch (error) {
+      // Do not log phone numbers, message text, tokens, or upstream response bodies.
+      console.error('WhatsApp AI message processing failed:', error?.message ?? 'UNKNOWN_ERROR');
+    }
+  }
+}
 
 const olist = new OlistAdapter();
 const maxBytes = config.maxRequestBytes;
@@ -83,10 +110,20 @@ const server = http.createServer(async (req, res) => {
       if (!config.whatsapp.enabled || !verifyWebhookSignature(rawBody, req.headers['x-hub-signature-256'])) {
         return send(res, 401, { error: 'INVALID_WEBHOOK_SIGNATURE' });
       }
-      try { JSON.parse(rawBody.toString('utf8')); } catch {
+      let payload;
+      try { payload = JSON.parse(rawBody.toString('utf8')); } catch {
         return send(res, 400, { error: 'INVALID_JSON' });
       }
-      return send(res, 200, { received: true, processing: false, note: 'Webhook validado; processamento de mensagens ainda não habilitado.' });
+      // Acknowledge Meta promptly; message handling is gated by WHATSAPP_ENABLED,
+      // WHATSAPP_AI_ENABLED and the server-side API credentials.
+      send(res, 200, {
+        received: true,
+        processing: Boolean(config.whatsapp.enabled && config.whatsapp.aiEnabled && config.whatsapp.openAiApiKey)
+      });
+      if (config.whatsapp.enabled && config.whatsapp.aiEnabled && config.whatsapp.openAiApiKey) {
+        queueMicrotask(() => void processWhatsAppPayload(payload));
+      }
+      return;
     } catch (error) {
       return send(res, error.statusCode ?? 400, { error: 'WEBHOOK_READ_FAILED', message: error.message });
     }
