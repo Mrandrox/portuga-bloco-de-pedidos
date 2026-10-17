@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/olist-whatsapp-integration
+      - feat/whatsapp-ai-webhook
     paths:
       - "integrations/olist-whatsapp/backend/**"
       - ".github/workflows/integration-backend.yml"
@@ -34,6 +35,7 @@ jobs:
           node --check src/config.js
           node --check src/olist-adapter.js
           node --check src/whatsapp-webhook.js
+          node --check src/whatsapp-ai.js
           node --check src/server.js
       - name: Run tests
         run: npm test
