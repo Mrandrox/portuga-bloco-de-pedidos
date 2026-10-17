@@ -46,7 +46,10 @@ export const config = Object.freeze({
     appSecret: env('META_APP_SECRET'),
     accessToken: env('WHATSAPP_ACCESS_TOKEN'),
     phoneNumberId: env('WHATSAPP_PHONE_NUMBER_ID'),
-    graphApiVersion: env('WHATSAPP_GRAPH_API_VERSION')
+    graphApiVersion: env('WHATSAPP_GRAPH_API_VERSION'),
+    aiEnabled: bool('WHATSAPP_AI_ENABLED', false),
+    openAiApiKey: env('OPENAI_API_KEY'),
+    openAiModel: env('OPENAI_MODEL', 'gpt-4.1-mini')
   })
 });
 
@@ -56,7 +59,8 @@ export function publicConfig() {
       olistCatalogConfigured: Boolean(config.olist.baseUrl && config.olist.token && config.olist.productsPath),
       olistOrderCreationConfigured: Boolean(config.olist.baseUrl && config.olist.token && config.olist.orderCreatePath && config.olist.orderCreateEnabled),
       whatsappWebhookConfigured: Boolean(config.whatsapp.enabled && config.whatsapp.verifyToken && config.whatsapp.appSecret),
-      whatsappOutboundConfigured: Boolean(config.whatsapp.enabled && config.whatsapp.accessToken && config.whatsapp.phoneNumberId && config.whatsapp.graphApiVersion)
+      whatsappOutboundConfigured: Boolean(config.whatsapp.enabled && config.whatsapp.accessToken && config.whatsapp.phoneNumberId && config.whatsapp.graphApiVersion),
+      whatsappAiConfigured: Boolean(config.whatsapp.enabled && config.whatsapp.aiEnabled && config.whatsapp.accessToken && config.whatsapp.phoneNumberId && config.whatsapp.graphApiVersion && config.whatsapp.openAiApiKey)
     }
   };
 }
