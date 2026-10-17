@@ -64,7 +64,7 @@ export async function generateAiReply(message) {
 export async function sendWhatsAppText(to, body) {
   const { accessToken, phoneNumberId, graphApiVersion } = config.whatsapp;
   if (!accessToken || !phoneNumberId || !graphApiVersion) throw new Error('WHATSAPP_OUTBOUND_NOT_CONFIGURED');
-  if (!/^v\\d+\\.\\d+$/.test(graphApiVersion)) throw new Error('WHATSAPP_GRAPH_API_VERSION_INVALID');
+  if (!/^v\d+\.\d+$/.test(graphApiVersion)) throw new Error('WHATSAPP_GRAPH_API_VERSION_INVALID');
   const url = `https://graph.facebook.com/${graphApiVersion}/${encodeURIComponent(phoneNumberId)}/messages`;
   const response = await fetch(url, {
     method: 'POST',
