@@ -4,7 +4,9 @@ Sistema de pedidos e comandas para atendimento. A branch `main` permanece separa
 
 ## Android existente
 
-**[BAIXAR O APK MAIS RECENTE](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)**
+[![Baixar aplicativo Android](https://img.shields.io/badge/BAIXAR-APLICATIVO%20ANDROID-c9a227?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)
+
+**[⬇️ Baixar o APK mais recente](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)**
 
 A versão Android existente foi projetada para manter a aplicação web atual e inclui fluxo de comanda contínua e impressão POS-58, sujeito a testes no dispositivo real.
 
