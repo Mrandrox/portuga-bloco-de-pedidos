@@ -1,18 +1,1 @@
-# Portuga — Bloco de Pedidos
-
-Sistema de anotações e pedidos para atendimento.
-
-## Android
-
-**[BAIXAR O APK MAIS RECENTE](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)**
-
-A versão Android mantém a aplicação web atual e adiciona:
-
-- uma comanda contínua por cliente;
-- subtotal individual por cliente;
-- atalhos de Lanches, Petiscos, Pizzas e Bebidas;
-- Bluetooth Classic/SPP nativo para impressoras POS-58;
-- reconexão automática da impressora;
-- download do APK por GitHub Releases.
-
-Projeto Android: `bloco-de-notas-android/`.
+"# Portuga \u2014 Bloco de Pedidos\n\nSistema de anota\u00e7\u00f5es e pedidos para atendimento.\n\n## Windows\n\n**[ABRIR O BUILD WINDOWS E BAIXAR O INSTALADOR](https://github.com/Mrandrox/portuga-bloco-de-pedidos/actions/workflows/windows-app.yml)**\n\nO workflow gera um instalador Windows x64 para revis\u00e3o. O arquivo fica dispon\u00edvel como artefato do GitHub Actions por 30 dias e exige uma conta GitHub com acesso ao reposit\u00f3rio. O app desktop usa o mesmo cat\u00e1logo e as mesmas comandas da vers\u00e3o web, mant\u00e9m os dados locais no computador e acrescenta configura\u00e7\u00f5es pr\u00f3prias, integra\u00e7\u00e3o de pedidos por endpoint e impress\u00e3o pela fila do Windows.\n\nProjeto Windows: `windows-app/`.\n\n## Android\n\n**[BAIXAR O APK MAIS RECENTE](https://github.com/Mrandrox/portuga-bloco-de-pedidos/releases/latest/download/Portuga-Bloco-de-Pedidos.apk)**\n\nA vers\u00e3o Android mant\u00e9m a aplica\u00e7\u00e3o web atual e adiciona:\n\n- uma comanda cont\u00ednua por cliente;\n- subtotal individual por cliente;\n- atalhos de Lanches, Petiscos, Pizzas e Bebidas;\n- Bluetooth Classic/SPP nativo para impressoras POS-58;\n- reconex\u00e3o autom\u00e1tica da impressora;\n- download do APK por GitHub Releases.\n\nProjeto Android: `bloco-de-notas-android/`.\n"
